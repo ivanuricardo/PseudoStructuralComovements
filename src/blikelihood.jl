@@ -1,0 +1,283 @@
+
+function b_unpack_params(theta, dimvals, ranks)
+    p_dimvals = prod(dimvals)
+    num_delta = ranks[1] * (dimvals[1] - ranks[1])
+    num_gamma = ranks[2] * (dimvals[2] - ranks[2])
+    num_u3 = ranks[1] * dimvals[1] - 1
+    num_u4 = ranks[2] * dimvals[2]
+    num_sigma = Int(p_dimvals * (p_dimvals + 1) / 2)
+
+    @assert length(theta) == (num_delta + num_gamma + num_u3 + num_u4 + num_sigma) "Parameter vector has wrong length!"
+
+    idx_gamma = num_delta + num_gamma
+    idx_u3 = num_delta + num_gamma + num_u3
+    idx_u4 = num_delta + num_gamma + num_u3 + num_u4
+
+    delta_vec = theta[1:num_delta]
+    gamma_vec = theta[(num_delta+1):idx_gamma]
+    u3_vec = theta[(idx_gamma+1):idx_u3]
+    u4_vec = theta[(idx_u3+1):idx_u4]
+    ll_vec = theta[(idx_u4+1):end]
+
+    delta_star = reshape(delta_vec, ranks[1], dimvals[1] - ranks[1])
+    delta = vcat(I(dimvals[1] - ranks[1]), delta_star)
+
+    gamma_star = reshape(gamma_vec, ranks[2], dimvals[2] - ranks[2])
+    gamma = vcat(I(dimvals[2] - ranks[2]), gamma_star)
+
+    insert!(u3_vec, 1, 1)
+    u3 = reshape(u3_vec, dimvals[1], ranks[1])
+    u4 = reshape(u4_vec, dimvals[2], ranks[2])
+
+    ll = vec_to_ll(ll_vec, p_dimvals)
+
+    return (; delta, gamma, u3, u4, ll)
+end
+
+function b_pack_params(delta, gamma, u3, u4, ll)
+    u3_removed = vec(u3)[2:end]
+    return vcat(vec(delta), vec(gamma), u3_removed, vec(u4), vech(ll))
+end
+
+function rand_init(dimvals, ranks)
+    num_delta = ranks[1] * (dimvals[1] - ranks[1])
+    num_gamma = ranks[2] * (dimvals[2] - ranks[2])
+    num_u3 = ranks[1] * dimvals[1]
+    num_u4 = ranks[2] * dimvals[2]
+
+    delta_init = randn(num_delta)
+    gamma_init = randn(num_gamma)
+    u3_init = randn(num_u3)
+    u3_new = u3_init / u3_init[1]
+    u4_init = randn(num_u4)
+
+    return b_pack_params(delta_init, gamma_init, u3_new, u4_init, I(prod(dimvals)))
+
+end
+
+function init_both(resp, pred, dimvals, ranks; pack_params=true)
+
+    N1_r1 = dimvals[1] - ranks[1]
+    N2_r2 = dimvals[2] - ranks[2]
+
+    coef = ols_coef(resp, pred)
+
+    tensor_coef =
+        matten(coef, [1, 2], [3, 4], [dimvals[1], dimvals[2], dimvals[1], dimvals[2]])
+    flat1 = tenmat(tensor_coef, row=1)
+    flat2 = tenmat(tensor_coef, row=2)
+    flat3 = tenmat(tensor_coef, row=3)
+    flat4 = tenmat(tensor_coef, row=4)
+    u1 = svd(flat1).U[:, 1:ranks[1]]
+    u2 = svd(flat2).U[:, 1:ranks[2]]
+    u3 = svd(flat3).U[:, 1:ranks[1]]
+    u4 = svd(flat4).U[:, 1:ranks[2]]
+
+    u3 = copy(u3) / u3[1, 1]
+    u4 = copy(u4) * u3[1, 1]
+
+    delta = nullspace(u1')
+    delta_rot = delta * inv(delta[1:(N1_r1), 1:N1_r1])
+    delta_star = delta_rot[(N1_r1+1):end, :]
+
+    gamma = nullspace(u2')
+    gamma_rot = gamma * inv(gamma[1:(N2_r2), 1:N2_r2])
+    gamma_star = gamma_rot[(N2_r2+1):end, :]
+
+    if pack_params
+        return b_pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)))
+    else
+        return (; u1, u2, u3, u4)
+    end
+
+end
+
+function both_loglike(theta, resp, pred, dimvals, ranks)
+    N1_r1 = dimvals[1] - ranks[1]
+    N2_r2 = dimvals[2] - ranks[2]
+
+    delta_rot, gamma_rot, u3, u4, ll = b_unpack_params(theta, dimvals, ranks)
+    delta_star = delta_rot[(N1_r1+1):end, :]
+    gamma_star = gamma_rot[(N2_r2+1):end, :]
+
+    pi_mat = pi_from_both(u3, u4, dimvals, ranks)
+
+    obs = size(resp, 2)
+    omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
+    sparse_omega = sparse(omega)
+    sparse_pi = sparse(pi_mat)
+    det_term = det(ll * ll')
+    if det_term <= 0.0
+        return 1e10
+    end
+
+    logdet_term = log(det_term)
+    X = sparse_omega * ll
+    precision_matrix = inv(X) * inv(X)'
+    #=chol_factor = cholesky(X * X', check=false)=#
+    #=precision_matrix = chol_factor \ I=#
+    #=precision_matrix = inv(sparse_omega * ll * ll' * sparse_omega')=#
+    sse = 0.0
+
+    for i = 2:obs
+        yt = resp[:, i]
+        yt_m1 = pred[:, i]
+        resid = sparse_omega * yt - sparse_pi * yt_m1
+        sse += dot(resid, precision_matrix * resid)
+    end
+
+    return 0.5 * (obs * logdet_term + sse)
+end
+
+function both_hess(theta_est, resp, pred, dimvals, ranks)
+    grad_est = ForwardDiff.hessian(
+        theta -> both_loglike(theta, resp, pred, dimvals, ranks),
+        theta_est,
+    )
+    return grad_est
+end
+
+#=function comovement_reg(data, dimvals, ranks; iters=200, tol=1e-04, verbose=false)=#
+#==#
+#=    perm_mat = both_perm_mat(dimvals, ranks)=#
+#=    perm_resp = (perm_mat*data)[:, 2:end]=#
+#=    pred = data[:, 1:(end-1)]=#
+#==#
+#=    both_init = init_both(data[:, 2:end], pred, dimvals, ranks)=#
+#=    obj = tet -> both_loglike(tet, perm_resp, pred, dimvals, ranks)=#
+#=    td = TwiceDifferentiable(obj, both_init, autodiff=:forward)=#
+#==#
+#=    res = optimize(=#
+#=        td,=#
+#=        both_init,=#
+#=        NewtonTrustRegion(),=#
+#=        Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=NaN),=#
+#=    )=#
+#=    theta_est = Optim.minimizer(res)=#
+#=    delta_est, gamma_est, u3_est, u4_est, sigma_est ==#
+#=        b_unpack_params(theta_est, dimvals, ranks)=#
+#==#
+#=    hess_est = hessian!(td, theta_est)=#
+#=    if verbose=#
+#=        hess_eigs = real.(eigvals(hess_est))=#
+#=        neg_eigs = hess_eigs[hess_eigs.<0.0]=#
+#=        if !isempty(neg_eigs)=#
+#=            @warn "Hessian has negative eigenvalues: $(neg_eigs). Using absolute value."=#
+#=        end=#
+#=    end=#
+#==#
+#=    num_delta = ranks[1] * (dimvals[1] - ranks[1])=#
+#=    stderrs = sqrt.(abs.(diag(inv(hess_est))))=#
+#=    delta_stderr = stderrs[1:num_delta]=#
+#=    num_gamma = ranks[2] * (dimvals[2] - ranks[2])=#
+#=    gamma_stderr = stderrs[(num_delta+1):(num_delta+num_gamma)]=#
+#==#
+#=    delta_star = delta_est[(dimvals[1]-ranks[1]+1):end, :]=#
+#=    gamma_star = gamma_est[(dimvals[2]-ranks[2]+1):end, :]=#
+#==#
+#=    omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)=#
+#=    pi_mat = pi_from_both(u3_est, u4_est, dimvals, ranks)=#
+#==#
+#=    return (;=#
+#=        res,=#
+#=        delta_est,=#
+#=        delta_stderr,=#
+#=        gamma_est,=#
+#=        gamma_stderr,=#
+#=        u3_est,=#
+#=        u4_est,=#
+#=        sigma_est,=#
+#=        hess_est,=#
+#=        omega,=#
+#=        pi_mat,=#
+#=    )=#
+#=end=#
+
+function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=20)
+
+    perm_mat = both_perm_mat(dimvals, ranks)
+    perm_resp = (perm_mat*data)[:, 2:end]
+    pred = data[:, 1:(end-1)]
+    perm_cen = perm_resp .- mean(perm_resp, dims=2)
+
+    some_init = init_both(perm_cen, pred, dimvals, ranks)
+    init_length = length(some_init)
+    potential_starts = fill(NaN, init_length + 1, num_starts)
+    obj = tet -> both_loglike(tet, perm_cen, pred, dimvals, ranks)
+
+    for i in 1:num_starts
+        if i == 1
+            both_init = copy(some_init)
+        else
+            #=both_init = copy(some_init) + 0.1 * randn(init_length)=#
+            both_init = rand_init(dimvals, ranks)
+        end
+        potential_starts[1:(end-1), i] = both_init
+        td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
+
+        res = optimize(
+            td,
+            both_init,
+            GradientDescent(),
+            Optim.Options(iterations=50, f_abstol=1e-01, f_reltol=1e-01, g_abstol=NaN),
+        )
+        potential_starts[end, i] = res.minimum
+        potential_starts[1:(end-1), i] = res.minimizer
+    end
+    chosen_idx = argmin(potential_starts[end, :])
+
+    main_init = potential_starts[1:(end-1), chosen_idx]
+
+    td = TwiceDifferentiable(obj, main_init, autodiff=:forward)
+
+    res = optimize(
+        td,
+        main_init,
+        NewtonTrustRegion(;
+            initial_delta=10.0,   # Δ₀
+            delta_hat=1e3,  # max Δₖ
+            eta=0.05,    # accept step when ρₖ > η
+            rho_lower=0.1,   # shrink when ρₖ < ρ_lower
+            rho_upper=0.9,   # grow   when ρₖ > ρ_upper
+        ),
+        Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=NaN),
+    )
+    hess_est = hessian!(td, res.minimizer)
+    hess_eigs = real.(eigvals(hess_est))
+    neg_eigs = hess_eigs[hess_eigs.<0.0]
+    if !isempty(neg_eigs)
+        @warn "Hessian has negative eigenvalues: $(neg_eigs). Using absolute value."
+    end
+    theta_est = Optim.minimizer(res)
+
+    delta_est, gamma_est, u3_est, u4_est, sigma_est =
+        b_unpack_params(theta_est, dimvals, ranks)
+
+    num_delta = ranks[1] * (dimvals[1] - ranks[1])
+    stderrs = sqrt.(abs.(diag(inv(hess_est))))
+    delta_stderr = stderrs[1:num_delta]
+    num_gamma = ranks[2] * (dimvals[2] - ranks[2])
+    gamma_stderr = stderrs[(num_delta+1):(num_delta+num_gamma)]
+
+    delta_star = delta_est[(dimvals[1]-ranks[1]+1):end, :]
+    gamma_star = gamma_est[(dimvals[2]-ranks[2]+1):end, :]
+
+    omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
+    pi_mat = pi_from_both(u3_est, u4_est, dimvals, ranks)
+
+    return (;
+        res,
+        delta_est,
+        delta_stderr,
+        gamma_est,
+        gamma_stderr,
+        u3_est,
+        u4_est,
+        sigma_est,
+        hess_est,
+        omega,
+        pi_mat,
+    )
+end
+
+
