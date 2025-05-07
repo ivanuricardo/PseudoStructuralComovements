@@ -1,13 +1,15 @@
-using LinearAlgebra
-using Statistics
+module PseudoStructuralComovements
+
+using Reexport
+@reexport using LinearAlgebra, Statistics, Random, JLD2, StatsPlots
+@reexport using ProgressMeter
+
 using TensorToolbox
-using JLD2
 using Optim
 using SparseArrays
 using ForwardDiff
 using Distributions
 using NLSolversBase
-using ProgressMeter
 
 include("blikelihood.jl")
 export b_unpack_params
@@ -54,3 +56,5 @@ export isstable
 export generate_rrmar_coef
 export simulate_rrmar_data
 export sim_stats
+
+end

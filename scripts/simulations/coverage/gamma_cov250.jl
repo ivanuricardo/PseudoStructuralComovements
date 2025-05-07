@@ -1,8 +1,5 @@
 using DrWatson
-@quickactivate "PseudoStructuralComovements"
-using LinearAlgebra, Statistics, Random
-using TensorToolbox, ProgressMeter, Plots, JLD2, StatsPlots
-include(srcdir("psc_packages.jl"))
+@quickactivate :PseudoStructuralComovements
 Random.seed!(20250421)
 
 dimvals = [3, 4]
@@ -25,29 +22,30 @@ gamma_true = nullspace(u2_true') ./ nullspace(u2_true')[1]
 u3_rot = u3_true * inv(u3_true[1:2, 1:2])
 u4_rot = u4_true * inv(u4_true[1:3, 1:3])
 
-true_gamma = fill(NaN, 3, sims)
+correct_gamma = fill(NaN, 3, sims)
 under_gamma = fill(NaN, 3, sims)
 over_gamma = fill(NaN, 3, sims)
 
-true_cov = fill(NaN, 3, sims)
+correct_cov = fill(NaN, 3, sims)
 under_cov = fill(NaN, 3, sims)
 over_cov = fill(NaN, 3, sims)
 
-@showprogress Threads.@threads for i = 1:sims
+#=@showprogress Threads.@threads for i = 1:sims=#
+@showprogress for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin)
     cen_data = data.data .- mean(data.data, dims=2)
 
-    true_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=500)
+    correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=500)
     over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)
     under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)
 
-    true_gamma[:, i] = true_reg.gamma_est[2:end]
+    correct_gamma[:, i] = correct_reg.gamma_est[2:end]
     under_gamma[:, i] = under_reg.gamma_est[2:end]
     over_gamma[:, i] = over_reg.gamma_est[2:end]
 
-    true_upper = true_reg.gamma_est[2:end] + 1.96 .* true_reg.gamma_stderr
-    true_lower = true_reg.gamma_est[2:end] - 1.96 .* true_reg.gamma_stderr
-    true_cov[:, i] = true_lower .< gamma_true[2:end] .< true_upper
+    correct_upper = correct_reg.gamma_est[2:end] + 1.96 .* correct_reg.gamma_stderr
+    correct_lower = correct_reg.gamma_est[2:end] - 1.96 .* correct_reg.gamma_stderr
+    correct_cov[:, i] = correct_lower .< gamma_true[2:end] .< correct_upper
 
     under_upper = under_reg.gamma_est[2:end] + 1.96 .* under_reg.gamma_stderr
     under_lower = under_reg.gamma_est[2:end] - 1.96 .* under_reg.gamma_stderr
@@ -57,6 +55,16 @@ over_cov = fill(NaN, 3, sims)
     over_lower = over_reg.gamma_est[2:end] - 1.96 .* over_reg.gamma_stderr
     over_cov[:, i] = over_lower .< gamma_true[2:end] .< over_upper
 end
+
+save(datadir("coverage/gamma_cov_results250.jld2"), Dict(
+    "correct_gamma" => correct_gamma,
+    "under_gamma" => under_gamma,
+    "over_gamma" => over_gamma,
+    "correct_cov" => correct_cov,
+    "under_cov" => under_cov,
+    "over_cov" => over_cov,
+    "gamma_true" => gamma_true
+))
 
 h1 = density(true_gamma[1, :], label="Correct rank")
 density!(under_gamma[1, :], label="Underestimated rank")
