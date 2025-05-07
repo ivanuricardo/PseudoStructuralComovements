@@ -3,7 +3,7 @@ using DrWatson
 Random.seed!(20250324)
 
 sims = 100
-dimvals = [4, 5]
+dimvals = [3, 4]
 ranks = [1, 1]
 snr = 0.7
 
