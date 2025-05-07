@@ -55,6 +55,13 @@ function ols_coef(resp, pred)
     return coef
 end
 
+function nearest_posdef(A; minimumeigenvalue=1e-6)
+    Evalues, Evector = eigen(A)
+    newA = Evector * Diagonal(max.(Evalues, minimumeigenvalue)) * Evector'
+
+    return Symmetric(newA)
+end
+
 function nearest_kron(A, SizeB, SizeC)
     m, n = size(A)
     m1, n1 = SizeB

@@ -246,7 +246,10 @@ function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=2
     hess_eigs = real.(eigvals(hess_est))
     neg_eigs = hess_eigs[hess_eigs.<0.0]
     if !isempty(neg_eigs)
-        @warn "Hessian has negative eigenvalues: $(neg_eigs). Using absolute value."
+        @warn "Hessian has negative eigenvalues: $(neg_eigs). Using nearest positive semidefinite matrix."
+        hess_pd = nearest_posdef(hess_est)
+    else
+        hess_pd = copy(hess_est)
     end
     theta_est = Optim.minimizer(res)
 
@@ -254,7 +257,7 @@ function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=2
         b_unpack_params(theta_est, dimvals, ranks)
 
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
-    stderrs = sqrt.(abs.(diag(inv(hess_est))))
+    stderrs = sqrt.(abs.(diag(inv(hess_pd))))
     delta_stderr = stderrs[1:num_delta]
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
     gamma_stderr = stderrs[(num_delta+1):(num_delta+num_gamma)]
@@ -279,5 +282,4 @@ function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=2
         pi_mat,
     )
 end
-
 

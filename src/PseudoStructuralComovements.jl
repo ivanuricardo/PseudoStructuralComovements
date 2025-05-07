@@ -10,6 +10,7 @@ using SparseArrays
 using ForwardDiff
 using Distributions
 using NLSolversBase
+using ProximalOperators
 
 include("blikelihood.jl")
 export b_unpack_params
@@ -43,6 +44,7 @@ export check_conf
 export var_coef
 export ols_coef
 export nearest_kron
+export nearest_posdef
 
 include("informationcrit.jl")
 export system_parameters
