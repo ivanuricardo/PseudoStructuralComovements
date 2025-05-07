@@ -9,7 +9,7 @@ over_rank = [3, 3]
 
 sims = 1000
 burnin = 50
-obs = 100 + burnin
+obs = 250 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_ranks)
 u1_true = coef.u1
@@ -66,20 +66,3 @@ save(datadir("coverage/gamma_cov_results250.jld2"), Dict(
     "gamma_true" => gamma_true
 ))
 
-h1 = density(true_gamma[1, :], label="Correct rank")
-density!(under_gamma[1, :], label="Underestimated rank")
-density!(over_gamma[1, :], label="Overestimated rank")
-vline!([gamma_true[2]], label="True value")
-vline!([mean(true_gamma[1, :])], label="Correct rank mean")
-vline!([mean(under_gamma[1, :])], label="Under rank mean")
-vline!([mean(over_gamma[1, :])], label="Over rank mean")
-
-h2 = density(true_gamma[2, :], label="Correct rank")
-density!(under_gamma[2, :], label="Underestimated rank")
-density!(over_gamma[2, :], label="Overestimated rank")
-vline!([gamma_true[3]], label="True value")
-
-h3 = density(true_gamma[3, :], label="Correct rank")
-density!(under_gamma[3, :], label="Underestimated rank")
-density!(over_gamma[3, :], label="Overestimated rank")
-vline!([gamma_true[4]], label="True value")

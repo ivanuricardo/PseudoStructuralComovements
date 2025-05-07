@@ -95,6 +95,7 @@ end
 function both_loglike(theta, resp, pred, dimvals, ranks)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
+    N = prod(dimvals)
 
     delta_rot, gamma_rot, u3, u4, ll = b_unpack_params(theta, dimvals, ranks)
     delta_star = delta_rot[(N1_r1+1):end, :]
@@ -114,9 +115,6 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
     logdet_term = log(det_term)
     X = sparse_omega * ll
     precision_matrix = inv(X) * inv(X)'
-    #=chol_factor = cholesky(X * X', check=false)=#
-    #=precision_matrix = chol_factor \ I=#
-    #=precision_matrix = inv(sparse_omega * ll * ll' * sparse_omega')=#
     sse = 0.0
 
     for i = 2:obs
@@ -126,7 +124,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
         sse += dot(resid, precision_matrix * resid)
     end
 
-    return 0.5 * (obs * logdet_term + sse)
+    return 0.5 * (obs * N * logdet_term + sse)
 end
 
 function both_hess(theta_est, resp, pred, dimvals, ranks)
