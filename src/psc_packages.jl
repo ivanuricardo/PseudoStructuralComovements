@@ -40,6 +40,7 @@ export vech
 export check_conf
 export var_coef
 export ols_coef
+export nearest_kron
 
 include("informationcrit.jl")
 export system_parameters

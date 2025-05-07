@@ -55,3 +55,21 @@ function ols_coef(resp, pred)
     return coef
 end
 
+function nearest_kron(A, SizeB, SizeC)
+    m, n = size(A)
+    m1, n1 = SizeB
+    m2, n2 = SizeC
+
+    @assert m == m1 * m2 "Size mismatch: m ≠ m1 * m2"
+    @assert n == n1 * n2 "Size mismatch: n ≠ n1 * n2"
+
+    ten_A = reshape(A, (m2, m1, n2, n1))
+    R = reshape(permutedims(ten_A, (2, 4, 1, 3)), m1 * n1, m2 * n2)
+
+    F = svd(R)
+    B = reshape(F.U[:, 1] * sqrt(F.S[1]), m1, n1)
+    C = reshape(F.V[:, 1] * sqrt(F.S[1]), m2, n2)
+    Aest = kron(B, C)
+    norm_a = norm(A - Aest)
+    return B, C, norm_a
+end
