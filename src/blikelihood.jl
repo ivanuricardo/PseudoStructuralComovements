@@ -95,7 +95,6 @@ end
 function both_loglike(theta, resp, pred, dimvals, ranks)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
-    N = prod(dimvals)
 
     delta_rot, gamma_rot, u3, u4, ll = b_unpack_params(theta, dimvals, ranks)
     delta_star = delta_rot[(N1_r1+1):end, :]
@@ -114,7 +113,8 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
 
     logdet_term = log(det_term)
     X = sparse_omega * ll
-    precision_matrix = inv(X) * inv(X)'
+    precision_matrix = inv(X') * inv(X)
+
     sse = 0.0
 
     for i = 2:obs
@@ -124,7 +124,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
         sse += dot(resid, precision_matrix * resid)
     end
 
-    return 0.5 * (obs * N * logdet_term + sse)
+    return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
 function both_hess(theta_est, resp, pred, dimvals, ranks)
@@ -134,62 +134,6 @@ function both_hess(theta_est, resp, pred, dimvals, ranks)
     )
     return grad_est
 end
-
-#=function comovement_reg(data, dimvals, ranks; iters=200, tol=1e-04, verbose=false)=#
-#==#
-#=    perm_mat = both_perm_mat(dimvals, ranks)=#
-#=    perm_resp = (perm_mat*data)[:, 2:end]=#
-#=    pred = data[:, 1:(end-1)]=#
-#==#
-#=    both_init = init_both(data[:, 2:end], pred, dimvals, ranks)=#
-#=    obj = tet -> both_loglike(tet, perm_resp, pred, dimvals, ranks)=#
-#=    td = TwiceDifferentiable(obj, both_init, autodiff=:forward)=#
-#==#
-#=    res = optimize(=#
-#=        td,=#
-#=        both_init,=#
-#=        NewtonTrustRegion(),=#
-#=        Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=NaN),=#
-#=    )=#
-#=    theta_est = Optim.minimizer(res)=#
-#=    delta_est, gamma_est, u3_est, u4_est, sigma_est ==#
-#=        b_unpack_params(theta_est, dimvals, ranks)=#
-#==#
-#=    hess_est = hessian!(td, theta_est)=#
-#=    if verbose=#
-#=        hess_eigs = real.(eigvals(hess_est))=#
-#=        neg_eigs = hess_eigs[hess_eigs.<0.0]=#
-#=        if !isempty(neg_eigs)=#
-#=            @warn "Hessian has negative eigenvalues: $(neg_eigs). Using absolute value."=#
-#=        end=#
-#=    end=#
-#==#
-#=    num_delta = ranks[1] * (dimvals[1] - ranks[1])=#
-#=    stderrs = sqrt.(abs.(diag(inv(hess_est))))=#
-#=    delta_stderr = stderrs[1:num_delta]=#
-#=    num_gamma = ranks[2] * (dimvals[2] - ranks[2])=#
-#=    gamma_stderr = stderrs[(num_delta+1):(num_delta+num_gamma)]=#
-#==#
-#=    delta_star = delta_est[(dimvals[1]-ranks[1]+1):end, :]=#
-#=    gamma_star = gamma_est[(dimvals[2]-ranks[2]+1):end, :]=#
-#==#
-#=    omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)=#
-#=    pi_mat = pi_from_both(u3_est, u4_est, dimvals, ranks)=#
-#==#
-#=    return (;=#
-#=        res,=#
-#=        delta_est,=#
-#=        delta_stderr,=#
-#=        gamma_est,=#
-#=        gamma_stderr,=#
-#=        u3_est,=#
-#=        u4_est,=#
-#=        sigma_est,=#
-#=        hess_est,=#
-#=        omega,=#
-#=        pi_mat,=#
-#=    )=#
-#=end=#
 
 function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=20)
 

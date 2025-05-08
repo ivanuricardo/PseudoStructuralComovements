@@ -29,7 +29,7 @@ function cov_to_ll(mat)
     return [L[i, j] for j = 1:N for i = j:N]
 end
 
-function ll_to_cov(vecL::Vector, n::Int)
+function ll_to_cov(vecL::AbstractVector, n)
     L = vec_to_ll(vecL, n)
     return L * L'
 end
