@@ -22,11 +22,11 @@ A = generate_rrmar_coef(dimvals, ranks)
     medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin)
     small_data = medmar.data[:, 1:100]
 
-    smallicest = rank_selection(small_data, dimvals; iters=100)
+    smallicest = rank_selection(small_data, dimvals; iters=500)
     smallaic11[:, s] .= smallicest.aic_sel[1:2]
     smallbic11[:, s] .= smallicest.bic_sel[1:2]
 
-    medicest = rank_selection(medmar.data, dimvals; iters=100)
+    medicest = rank_selection(medmar.data, dimvals; iters=500)
     medaic11[:, s] .= medicest.aic_sel[1:2]
     medbic11[:, s] .= medicest.bic_sel[1:2]
 end
