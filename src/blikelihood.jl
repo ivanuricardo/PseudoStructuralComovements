@@ -48,8 +48,9 @@ function rand_init(dimvals, ranks)
     delta_init = randn(num_delta)
     gamma_init = randn(num_gamma)
     u3_init = randn(num_u3)
-    u3_new = u3_init / u3_init[1]
-    u4_init = randn(num_u4)
+    s = u3_init[1]
+    u3_new = u3_init / s
+    u4_init = randn(num_u4) * s
 
     return b_pack_params(delta_init, gamma_init, u3_new, u4_init, I(prod(dimvals)))
 
@@ -73,8 +74,9 @@ function init_both(resp, pred, dimvals, ranks; pack_params=true)
     u3 = svd(flat3).U[:, 1:ranks[1]]
     u4 = svd(flat4).U[:, 1:ranks[2]]
 
-    u3 = copy(u3) / u3[1, 1]
-    u4 = copy(u4) * u3[1, 1]
+    s = u3[1, 1]
+    u3 = copy(u3) / s
+    u4 = copy(u4) * s
 
     delta = nullspace(u1')
     delta_rot = delta * inv(delta[1:(N1_r1), 1:N1_r1])
@@ -135,17 +137,11 @@ function both_hess(theta_est, resp, pred, dimvals, ranks)
     return grad_est
 end
 
-function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=20)
-
-    perm_mat = both_perm_mat(dimvals, ranks)
-    perm_resp = (perm_mat*data)[:, 2:end]
-    pred = data[:, 1:(end-1)]
-    perm_cen = perm_resp .- mean(perm_resp, dims=2)
-
-    some_init = init_both(perm_cen, pred, dimvals, ranks)
+function comovement_init(resp, pred, dimvals, ranks, iters=50, tol=1e-02, num_starts=20)
+    some_init = init_both(resp, pred, dimvals, ranks)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
-    obj = tet -> both_loglike(tet, perm_cen, pred, dimvals, ranks)
+    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
 
     for i in 1:num_starts
         if i == 1
@@ -161,29 +157,58 @@ function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=2
             td,
             both_init,
             GradientDescent(),
-            Optim.Options(iterations=50, f_abstol=1e-01, f_reltol=1e-01, g_abstol=NaN),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=NaN),
         )
         potential_starts[end, i] = res.minimum
         potential_starts[1:(end-1), i] = res.minimizer
     end
     chosen_idx = argmin(potential_starts[end, :])
 
-    main_init = potential_starts[1:(end-1), chosen_idx]
+    return potential_starts[1:(end-1), chosen_idx]
 
-    td = TwiceDifferentiable(obj, main_init, autodiff=:forward)
+end
 
-    res = optimize(
-        td,
-        main_init,
-        NewtonTrustRegion(;
-            initial_delta=10.0,   # Δ₀
-            delta_hat=1e3,  # max Δₖ
-            eta=0.05,    # accept step when ρₖ > η
-            rho_lower=0.1,   # shrink when ρₖ < ρ_lower
-            rho_upper=0.9,   # grow   when ρₖ > ρ_upper
-        ),
-        Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=NaN),
-    )
+function random_restarts(resp, pred, dimvals, ranks; iters=300, tol=1e-05)
+
+    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
+    td = nothing
+    res = nothing
+
+    for _ in 1:20
+        main_init = comovement_init(resp, pred, dimvals, ranks)
+
+        td = TwiceDifferentiable(obj, main_init, autodiff=:forward)
+
+        res = optimize(
+            td,
+            main_init,
+            NewtonTrustRegion(;
+                initial_delta=10.0,   # Δ₀
+                delta_hat=1e3,  # max Δₖ
+                eta=0.05,    # accept step when ρₖ > η
+                rho_lower=0.1,   # shrink when ρₖ < ρ_lower
+                rho_upper=0.9,   # grow   when ρₖ > ρ_upper
+            ),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=NaN),
+        )
+
+        if res.g_residual < 1.0
+            break
+        end
+    end
+
+    return (; res, td)
+end
+
+function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05)
+
+    perm_mat = both_perm_mat(dimvals, ranks)
+    perm_resp = (perm_mat*data)[:, 2:end]
+    pred = data[:, 1:(end-1)]
+    perm_cen = perm_resp .- mean(perm_resp, dims=2)
+
+    res, td = random_restarts(perm_cen, pred, dimvals, ranks; iters, tol)
+
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
     hess_eigs = real.(eigvals(hess_est))
