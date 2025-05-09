@@ -106,7 +106,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
     omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
     sparse_omega = sparse(omega)
     sparse_pi = sparse(pi_mat)
-    det_term = det(ll * ll')
+    det_term = det(0.5 .* (ll * ll' + ll * ll'))
     if det_term <= 0.0
         return 1e10
     end
