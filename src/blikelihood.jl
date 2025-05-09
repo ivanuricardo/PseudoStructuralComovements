@@ -184,7 +184,8 @@ function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=2
         ),
         Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=NaN),
     )
-    hess_est = hessian!(td, res.minimizer)
+    hess_non = hessian!(td, res.minimizer)
+    hess_est = 0.5 .* (hess_non + hess_non')
     hess_eigs = real.(eigvals(hess_est))
     neg_eigs = hess_eigs[hess_eigs.<0.0]
     if !isempty(neg_eigs)
