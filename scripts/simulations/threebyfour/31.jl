@@ -3,8 +3,8 @@ using DrWatson
 Random.seed!(20250324)
 
 sims = 100
-dimvals = [4, 5]
-ranks = [4, 1]
+dimvals = [3, 4]
+ranks = [3, 1]
 snr = 0.7
 
 smallaic11 = fill(NaN, 2, sims)

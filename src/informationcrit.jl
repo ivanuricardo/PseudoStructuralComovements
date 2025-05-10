@@ -21,7 +21,7 @@ function rank_selection(data, dimvals; iters=100, num_starts=5)
     Threads.@threads for i = 1:prod(dimvals)
         selected_rank = collect(rank_grid[i])
         num_parameters = system_parameters(dimvals, selected_rank)
-        reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters, num_starts=num_starts)
+        reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters)
         ll = -reg.res.minimum
         ictable[1, i] = aic(ll, num_parameters)
         ictable[2, i] = bic(ll, num_parameters, obs)
