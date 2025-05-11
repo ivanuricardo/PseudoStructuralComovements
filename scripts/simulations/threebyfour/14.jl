@@ -17,8 +17,6 @@ smallobs = 100
 medobs = 250
 
 A = generate_rrmar_coef(dimvals, ranks)
-A.sorted_eigs
-
 
 @showprogress Threads.@threads for s = 1:sims
     medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin)
