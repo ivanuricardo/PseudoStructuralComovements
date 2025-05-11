@@ -1,6 +1,6 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
-Random.seed!(20250324)
+Random.seed!(20250511)
 
 sims = 100
 dimvals = [3, 4]
@@ -17,12 +17,14 @@ smallobs = 100
 medobs = 250
 
 A = generate_rrmar_coef(dimvals, ranks)
+A.sorted_eigs
+
 
 @showprogress Threads.@threads for s = 1:sims
     medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin)
-    small_data = medmar.data[:, 1:100]
+    smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin)
 
-    smallicest = rank_selection(small_data, dimvals; iters=500)
+    smallicest = rank_selection(smallmar.data, dimvals; iters=500)
     smallaic11[:, s] .= smallicest.aic_sel[1:2]
     smallbic11[:, s] .= smallicest.bic_sel[1:2]
 

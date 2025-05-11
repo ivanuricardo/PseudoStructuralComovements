@@ -168,7 +168,7 @@ function comovement_init(resp, pred, dimvals, ranks, iters=50, tol=1e-02, num_st
 
 end
 
-function random_restarts(resp, pred, dimvals, ranks; iters=300, tol=1e-05, max_restarts=10)
+function random_restarts(resp, pred, dimvals, ranks; iters=300, tol=1e-05, max_restarts=20)
 
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
     td = nothing
