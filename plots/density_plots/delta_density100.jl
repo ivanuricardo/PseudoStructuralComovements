@@ -20,8 +20,3 @@ density!(over_delta[2, :])
 vline!([delta_true[3]])
 savefig(h2, "delta_density100_2.png")
 
-h3 = density(correct_delta[3, :], label="Correct rank", legendfontsize=10)
-density!(under_delta[3, :], label="Underestimated rank")
-density!(over_delta[3, :], label="Overestimated rank")
-vline!([delta_true[4]], label="True value")
-savefig(h3, "delta_density100_3.png")
