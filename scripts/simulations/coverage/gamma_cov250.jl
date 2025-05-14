@@ -34,9 +34,9 @@ over_cov = fill(NaN, 3, sims)
     data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin)
     cen_data = data.data .- mean(data.data, dims=2)
 
-    correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=500)
-    over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)
-    under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)
+    correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=100)
+    over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=100)
+    under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=100)
 
     correct_gamma[:, i] = correct_reg.gamma_est[2:end]
     under_gamma[:, i] = under_reg.gamma_est[2:end]
