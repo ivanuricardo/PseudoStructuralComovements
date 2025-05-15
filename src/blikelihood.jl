@@ -137,7 +137,7 @@ function both_hess(theta_est, resp, pred, dimvals, ranks)
     return grad_est
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-01, num_starts=30, num_selected=5, spread=2)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts=50, num_selected=5, spread=2)
     some_init = init_both(resp, pred, dimvals, ranks)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
