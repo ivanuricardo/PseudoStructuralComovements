@@ -137,7 +137,7 @@ function both_hess(theta_est, resp, pred, dimvals, ranks)
     return grad_est
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts=200, num_selected=5, spread=2)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts=200, num_selected=5, spread=3)
     some_init = init_both(resp, pred, dimvals, ranks)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -183,7 +183,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=5, spread=1)
+function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=50, num_selected=5, spread=1)
 
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
     td = nothing
@@ -221,7 +221,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
     return (; res, td, num_iters, problem_starts)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=300, tol=1e-05, num_starts=20, num_selected=5, spread=1)
+function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-04, num_starts=20, num_selected=5, spread=2)
 
     perm_mat = both_perm_mat(dimvals, ranks)
     perm_resp = (perm_mat*data)[:, 2:end]

@@ -7,7 +7,7 @@ true_ranks = [2, 2]
 under_rank = [2, 1]
 over_rank = [2, 3]
 
-sims = 10
+sims = 100
 burnin = 50
 obs = 100 + burnin
 
@@ -35,6 +35,7 @@ over_cov = fill(NaN, 2, sims)
     cen_data = data.data .- mean(data.data, dims=2)
 
     @time correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=100)
+    println(correct_reg.res.iterations)
     if correct_reg.res.g_residual > 1.0
         println("Not converged")
     end
