@@ -39,22 +39,36 @@ function b_pack_params(delta, gamma, u3, u4, ll)
     return vcat(vec(delta), vec(gamma), u3_removed, vec(u4), vech(ll))
 end
 
-function rand_init(dimvals, ranks; spread=1)
-    num_delta = ranks[1] * (dimvals[1] - ranks[1])
-    num_gamma = ranks[2] * (dimvals[2] - ranks[2])
-    num_u3 = ranks[1] * dimvals[1]
-    num_u4 = ranks[2] * dimvals[2]
+function rand_init(dimvals, ranks)
+    n1_r1 = dimvals[1] - ranks[1]
+    n2_r2 = dimvals[2] - ranks[2]
 
-    delta_init = spread .* randn(num_delta)
-    gamma_init = spread .* randn(num_gamma)
-    u3_init = spread .* randn(num_u3)
-    s = u3_init[1]
-    u3_new = u3_init / s
-    u4_init = spread .* randn(num_u4) * s
+    coef = generate_rrmar_coef(dimvals, ranks; maxeigen=0.9)
 
-    return b_pack_params(delta_init, gamma_init, u3_new, u4_init, I(prod(dimvals)))
+    delta = rotate_u!(nullspace(coef.u1'))
+    gamma = rotate_u!(nullspace(coef.u2'))
+    delta_init = delta[(n1_r1+1):end, :]
+    gamma_init = gamma[(n2_r2+1):end, :]
+    return b_pack_params(delta_init, gamma_init, coef.u3, coef.u4, I(prod(dimvals)))
 
 end
+
+#=function rand_init(dimvals, ranks; spread=1)=#
+#=    num_delta = ranks[1] * (dimvals[1] - ranks[1])=#
+#=    num_gamma = ranks[2] * (dimvals[2] - ranks[2])=#
+#=    num_u3 = ranks[1] * dimvals[1]=#
+#=    num_u4 = ranks[2] * dimvals[2]=#
+#==#
+#=    delta_init = spread .* randn(num_delta)=#
+#=    gamma_init = spread .* randn(num_gamma)=#
+#=    u3_init = spread .* randn(num_u3)=#
+#=    s = u3_init[1]=#
+#=    u3_new = u3_init / s=#
+#=    u4_init = spread .* randn(num_u4) * s=#
+#==#
+#=    return b_pack_params(delta_init, gamma_init, u3_new, u4_init, I(prod(dimvals)))=#
+#==#
+#=end=#
 
 function init_both(resp, pred, dimvals, ranks; pack_params=true)
 
@@ -150,7 +164,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_sta
             both_init = copy(some_init)
         else
             #=both_init = copy(some_init) .+ rand_init(dimvals, ranks)=#
-            both_init = rand_init(dimvals, ranks; spread)
+            both_init = rand_init(dimvals, ranks)
         end
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
