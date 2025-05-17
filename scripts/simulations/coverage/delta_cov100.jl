@@ -7,7 +7,7 @@ true_ranks = [2, 2]
 under_rank = [2, 1]
 over_rank = [2, 3]
 
-sims = 100
+sims = 1000
 burnin = 50
 obs = 100 + burnin
 
@@ -30,17 +30,13 @@ correct_cov = fill(NaN, 2, sims)
 under_cov = fill(NaN, 2, sims)
 over_cov = fill(NaN, 2, sims)
 
-@showprogress for i = 1:sims
+@showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin)
     cen_data = data.data .- mean(data.data, dims=2)
 
-    @time correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=100)
-    println(correct_reg.res.iterations)
-    if correct_reg.res.g_residual > 1.0
-        println("Not converged")
-    end
-    over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=100)
-    under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=100)
+    correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=500)
+    over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)
+    under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)
 
     correct_delta[:, i] = correct_reg.delta_est[2:end]
     under_delta[:, i] = under_reg.delta_est[2:end]

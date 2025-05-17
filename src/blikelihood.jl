@@ -53,23 +53,6 @@ function rand_init(dimvals, ranks)
 
 end
 
-#=function rand_init(dimvals, ranks; spread=1)=#
-#=    num_delta = ranks[1] * (dimvals[1] - ranks[1])=#
-#=    num_gamma = ranks[2] * (dimvals[2] - ranks[2])=#
-#=    num_u3 = ranks[1] * dimvals[1]=#
-#=    num_u4 = ranks[2] * dimvals[2]=#
-#==#
-#=    delta_init = spread .* randn(num_delta)=#
-#=    gamma_init = spread .* randn(num_gamma)=#
-#=    u3_init = spread .* randn(num_u3)=#
-#=    s = u3_init[1]=#
-#=    u3_new = u3_init / s=#
-#=    u4_init = spread .* randn(num_u4) * s=#
-#==#
-#=    return b_pack_params(delta_init, gamma_init, u3_new, u4_init, I(prod(dimvals)))=#
-#==#
-#=end=#
-
 function init_both(resp, pred, dimvals, ranks; pack_params=true)
 
     N1_r1 = dimvals[1] - ranks[1]
@@ -143,15 +126,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
     return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
-function both_hess(theta_est, resp, pred, dimvals, ranks)
-    grad_est = ForwardDiff.hessian(
-        theta -> both_loglike(theta, resp, pred, dimvals, ranks),
-        theta_est,
-    )
-    return grad_est
-end
-
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts=200, num_selected=5, spread=3)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=100, num_selected=5)
     some_init = init_both(resp, pred, dimvals, ranks)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -172,15 +147,8 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_sta
         res = optimize(
             td,
             both_init,
-            #=GradientDescent(),=#
-            NewtonTrustRegion(;
-                initial_delta=1e2,   # Δ₀
-                delta_hat=1e4,  # max Δₖ
-                eta=0.01,    # accept step when ρₖ > η
-                rho_lower=0.1,   # shrink when ρₖ < ρ_lower
-                rho_upper=0.9,   # grow   when ρₖ > ρ_upper
-            ),
-            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1.0),
+            LBFGS(),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol),
         )
         if res.g_residual > 1.0
             problem_starts[i] = 1
@@ -190,20 +158,19 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_sta
         potential_starts[1:(end-1), i] = res.minimizer
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
-    println(chosen_idx)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
 
     return (; chosen_start, num_iters, problem_starts)
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=50, num_selected=5, spread=1)
+function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=100, num_selected=5)
 
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
     td = nothing
     res = nothing
 
-    chosen_start, num_iters, problem_starts = comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-01, num_starts=num_starts, num_selected=num_selected, spread)
+    chosen_start, num_iters, problem_starts = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts, num_selected)
     potential_results = Vector{Any}(undef, size(chosen_start, 2))
 
     count = 0
@@ -213,18 +180,11 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
         res = optimize(
             td,
             chosen_start[:, i],
-            #=Newton(),=#
-            NewtonTrustRegion(;
-                initial_delta=1e2,   # Δ₀
-                delta_hat=1e4,  # max Δₖ
-                eta=0.01,    # accept step when ρₖ > η
-                rho_lower=0.1,   # shrink when ρₖ < ρ_lower
-                rho_upper=0.9,   # grow   when ρₖ > ρ_upper
-            ),
-            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=NaN),
+            LBFGS(),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-02),
         )
         potential_results[i] = res
-        if res.g_residual < 1.0
+        if res.g_residual < 1e-01
             break
         end
     end
@@ -235,14 +195,14 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
     return (; res, td, num_iters, problem_starts)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-04, num_starts=20, num_selected=5, spread=2)
+function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-05, num_starts=100, num_selected=5)
 
     perm_mat = both_perm_mat(dimvals, ranks)
     perm_resp = (perm_mat*data)[:, 2:end]
     pred = data[:, 1:(end-1)]
     perm_cen = perm_resp .- mean(perm_resp, dims=2)
 
-    res, td, num_iters, problem_starts = main_algorithm(perm_cen, pred, dimvals, ranks; iters, tol, num_starts, num_selected, spread)
+    res, td, num_iters, problem_starts = main_algorithm(perm_cen, pred, dimvals, ranks; iters, tol, num_starts, num_selected)
 
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
