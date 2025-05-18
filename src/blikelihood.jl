@@ -164,7 +164,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=100, num_selected=5)
+function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=100, num_selected=3)
 
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
     td = nothing
@@ -181,7 +181,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
             td,
             chosen_start[:, i],
             LBFGS(),
-            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-02),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
         if res.g_residual < 1e-01
@@ -195,7 +195,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
     return (; res, td, num_iters, problem_starts)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-05, num_starts=100, num_selected=5)
+function comovement_reg(data, dimvals, ranks; iters=2000, tol=1e-10, num_starts=100, num_selected=3)
 
     perm_mat = both_perm_mat(dimvals, ranks)
     perm_resp = (perm_mat*data)[:, 2:end]
