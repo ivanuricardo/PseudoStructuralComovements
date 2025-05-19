@@ -35,24 +35,31 @@ over_cov = fill(NaN, 3, sims)
     cen_data = data.data .- mean(data.data, dims=2)
 
     correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=500)
-    over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)
-    under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)
+    #=over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)=#
+    #=under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)=#
+
 
     correct_gamma[:, i] = correct_reg.gamma_est[2:end]
-    under_gamma[:, i] = under_reg.gamma_est[2:end]
-    over_gamma[:, i] = over_reg.gamma_est[2:end]
+    #=under_gamma[:, i] = under_reg.gamma_est[2:end]=#
+    #=over_gamma[:, i] = over_reg.gamma_est[2:end]=#
+
+
+    if correct_gamma[1, i] > 2.0 || correct_gamma[2, i] < -5.0
+        println("iterations: $(correct_reg.res.iterations)")
+        save(datadir("coverage/tmp$i.jld2"), Dict("cen_data" => cen_data))
+    end
 
     correct_upper = correct_reg.gamma_est[2:end] + 1.96 .* correct_reg.gamma_stderr
     correct_lower = correct_reg.gamma_est[2:end] - 1.96 .* correct_reg.gamma_stderr
     correct_cov[:, i] = correct_lower .< gamma_true[2:end] .< correct_upper
 
-    under_upper = under_reg.gamma_est[2:end] + 1.96 .* under_reg.gamma_stderr
-    under_lower = under_reg.gamma_est[2:end] - 1.96 .* under_reg.gamma_stderr
-    under_cov[:, i] = under_lower .< gamma_true[2:end] .< under_upper
-
-    over_upper = over_reg.gamma_est[2:end] + 1.96 .* over_reg.gamma_stderr
-    over_lower = over_reg.gamma_est[2:end] - 1.96 .* over_reg.gamma_stderr
-    over_cov[:, i] = over_lower .< gamma_true[2:end] .< over_upper
+    #=under_upper = under_reg.gamma_est[2:end] + 1.96 .* under_reg.gamma_stderr=#
+    #=under_lower = under_reg.gamma_est[2:end] - 1.96 .* under_reg.gamma_stderr=#
+    #=under_cov[:, i] = under_lower .< gamma_true[2:end] .< under_upper=#
+    #==#
+    #=over_upper = over_reg.gamma_est[2:end] + 1.96 .* over_reg.gamma_stderr=#
+    #=over_lower = over_reg.gamma_est[2:end] - 1.96 .* over_reg.gamma_stderr=#
+    #=over_cov[:, i] = over_lower .< gamma_true[2:end] .< over_upper=#
 end
 
 save(datadir("coverage/gamma_cov_results100.jld2"), Dict(
