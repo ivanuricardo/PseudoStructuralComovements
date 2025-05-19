@@ -148,7 +148,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
     return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_starts=100, num_selected=5)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=100, num_selected=5)
     some_init = init_both(resp, pred, dimvals, ranks)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -229,7 +229,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
     return (; res, td, num_iters, problem_starts)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-05, num_starts=25, num_selected=5)
+function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-04, num_starts=50, num_selected=5)
 
     perm_mat = both_perm_mat(dimvals, ranks)
     perm_resp = (perm_mat*data)[:, 2:end]
