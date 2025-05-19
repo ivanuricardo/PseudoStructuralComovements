@@ -169,7 +169,13 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
         res = optimize(
             td,
             both_init,
-            LBFGS(),
+            NewtonTrustRegion(;
+                initial_delta=1e2,   # Δ₀
+                delta_hat=1e4,  # max Δₖ
+                eta=0.01,    # accept step when ρₖ > η
+                rho_lower=0.1,   # shrink when ρₖ < ρ_lower
+                rho_upper=0.9,   # grow   when ρₖ > ρ_upper
+            ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol),
         )
         if res.g_residual > 1.0
@@ -186,7 +192,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=100, num_selected=3)
+function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=100, num_selected=5)
 
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
     td = nothing
@@ -202,7 +208,13 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
         res = optimize(
             td,
             chosen_start[:, i],
-            LBFGS(),
+            NewtonTrustRegion(;
+                initial_delta=1e2,   # Δ₀
+                delta_hat=1e4,  # max Δₖ
+                eta=0.01,    # accept step when ρₖ > η
+                rho_lower=0.1,   # shrink when ρₖ < ρ_lower
+                rho_upper=0.9,   # grow   when ρₖ > ρ_upper
+            ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
@@ -217,7 +229,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
     return (; res, td, num_iters, problem_starts)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=2000, tol=1e-10, num_starts=100, num_selected=3)
+function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-05, num_starts=50, num_selected=5)
 
     perm_mat = both_perm_mat(dimvals, ranks)
     perm_resp = (perm_mat*data)[:, 2:end]
