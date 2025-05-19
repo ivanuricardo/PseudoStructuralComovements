@@ -19,7 +19,6 @@ export b_pack_params
 export init_both
 export rand_init
 export comovement_reg
-export both_hess
 
 include("./bothfuncs.jl")
 export both_blockvec
@@ -36,10 +35,14 @@ export b_thirdrow
 export b_fourthrow
 
 include("./helper.jl")
+export insertk!
+export removek!
 export cov_to_ll
+export make_companion
 export rotate_u!
 export ll_to_cov
 export vec_to_ll
+export vecb
 export vech
 export check_conf
 export var_coef

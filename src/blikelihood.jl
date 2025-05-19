@@ -1,11 +1,11 @@
 
-function b_unpack_params(theta, dimvals, ranks)
-    p_dimvals = prod(dimvals)
+function b_unpack_params(theta, dimvals, ranks; p=1)
+    pdims = prod(dimvals)
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
-    num_u3 = ranks[1] * dimvals[1] - 1
-    num_u4 = ranks[2] * dimvals[2]
-    num_sigma = Int(p_dimvals * (p_dimvals + 1) / 2)
+    num_u3 = p * (ranks[1] * dimvals[1] - 1)
+    num_u4 = p * (ranks[2] * dimvals[2])
+    num_sigma = Int(pdims * (pdims + 1) / 2)
 
     @assert length(theta) == (num_delta + num_gamma + num_u3 + num_u4 + num_sigma) "Parameter vector has wrong length!"
 
@@ -24,19 +24,41 @@ function b_unpack_params(theta, dimvals, ranks)
 
     gamma_star = reshape(gamma_vec, ranks[2], dimvals[2] - ranks[2])
     gamma = vcat(I(dimvals[2] - ranks[2]), gamma_star)
+    ll = vec_to_ll(ll_vec, pdims)
 
-    insert!(u3_vec, 1, 1)
-    u3 = reshape(u3_vec, dimvals[1], ranks[1])
-    u4 = reshape(u4_vec, dimvals[2], ranks[2])
+    if p == 1
+        insert!(u3_vec, 1, 1)
+        u3 = reshape(u3_vec, dimvals[1], ranks[1])
+        u4 = reshape(u4_vec, dimvals[2], ranks[2])
 
-    ll = vec_to_ll(ll_vec, p_dimvals)
+        return (; delta, gamma, u3, u4, ll)
+    end
 
+    u3 = zeros(p * dimvals[1], ranks[1])
+    u4 = zeros(p * dimvals[2], ranks[2])
+    insertk!(u3_vec, num_u3 ÷ p)
+    for k in 0:(p-1)
+
+        i1, i2 = k * dimvals[1] + 1, (k + 1) * dimvals[1]
+        j1, j2 = k * dimvals[2] + 1, (k + 1) * dimvals[2]
+
+        u3_prod = dimvals[1] * ranks[1]
+        u4_prod = dimvals[2] * ranks[2]
+        k1, k2 = k * u3_prod + 1, (k + 1) * u3_prod
+        l1, l2 = k * u4_prod + 1, (k + 1) * u4_prod
+
+        u3[i1:i2, :] .= reshape(u3_vec[k1:k2], dimvals[1], ranks[1])
+        u4[j1:j2, :] .= reshape(u4_vec[l1:l2], dimvals[2], ranks[2])
+    end
     return (; delta, gamma, u3, u4, ll)
+
 end
 
 function b_pack_params(delta, gamma, u3, u4, ll)
-    u3_removed = vec(u3)[2:end]
-    return vcat(vec(delta), vec(gamma), u3_removed, vec(u4), vech(ll))
+    n1, n2 = size(u3)
+    vec_u3 = vecb(u3, n1)
+    removek!(vec_u3, n1 * n2 - 1)
+    return vcat(vec(delta), vec(gamma), vec_u3, vec(u4), vech(ll))
 end
 
 function rand_init(dimvals, ranks)

@@ -8,15 +8,17 @@ function isstable(A, maxeigen)
     return stab_cond < maxeigen
 end
 
-function generate_rrmar_coef(dimvals, ranks; maxeigen=0.9)
+function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
 
     A = fill(NaN, prod(dimvals), prod(dimvals))
     u1 = fill(NaN, dimvals[1], ranks[1])
     u2 = fill(NaN, dimvals[2], ranks[2])
-    u3 = fill(NaN, dimvals[1], ranks[1])
-    u4 = fill(NaN, dimvals[2], ranks[2])
+    u3 = fill(NaN, p * dimvals[1], ranks[1])
+    u4 = fill(NaN, p * dimvals[2], ranks[2])
     stabit = 0
 
+    u3_cont = Vector{Any}(undef, p)
+    u4_cont = Vector{Any}(undef, p)
     while true
         stabit += 1
         randU1 = randn(dimvals[1], ranks[1])
@@ -25,12 +27,11 @@ function generate_rrmar_coef(dimvals, ranks; maxeigen=0.9)
         u2 .= svd(randU2).U
         u3 = randn(dimvals[1], ranks[1])
         u3_scale = u3[1, 1]
-        u3 = copy(u3) / u3_scale
         u1 = copy(u1) * u3_scale
+        u3 = copy(u3) / u3_scale
         u4 = randn(dimvals[2], ranks[2])
         k21 = kron(u2, u1)[:, 1:prod(ranks)]
         k43 = kron(u4, u3)[:, 1:prod(ranks)]
-
         A .= k21 * k43'
         if isstable(A, maxeigen)
             break

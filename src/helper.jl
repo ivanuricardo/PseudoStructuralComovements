@@ -23,6 +23,52 @@ function rotate_u!(U)
     return U
 end
 
+function make_companion(omega, pi_vec)
+    k = size(pi_vec, 1)
+    p = size(pi_vec, 2) ÷ size(pi_vec, 1)
+    omega_tilde = diagm(ones(k * p))
+    omega_tilde[1:k, 1:k] .= omega
+    pi_tilde = diagm(-k => ones(k * p - k))
+    pi_tilde[1:k, :] .= pi_vec
+    return (; omega_tilde, pi_tilde)
+end
+
+function insertk!(v::AbstractVector, k::Int; val=1)
+    n = length(v)
+    starts = collect(1:k:n)
+    for s in reverse(starts)
+        insert!(v, s, val)
+    end
+    return v
+end
+
+function removek!(v::AbstractVector, k::Int; val=1)
+    step = k + 1
+    idxs = collect(1:step:length(v))
+    for i in reverse(idxs)
+        if v[i] == val
+            deleteat!(v, i)
+        end
+    end
+    return v
+end
+
+function vecb(M::AbstractMatrix, b::Integer)
+    n, p = size(M)
+    @assert n % b == 0 "number of rows ($(n)) must be a multiple of block‐size b=$(b)"
+    nb = n ÷ b
+    out = similar(vec(M))
+    pos = 1
+    for i in 0:(nb-1)
+        rows = (i*b+1):(i*b+b)
+        for j in 1:p
+            @views out[pos:pos+b-1] .= M[rows, j]
+            pos += b
+        end
+    end
+    return out
+end
+
 function cov_to_ll(mat)
     N = size(mat, 1)
     L = cholesky(mat).L

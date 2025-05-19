@@ -75,10 +75,32 @@ function omega_from_both(delta_star, gamma_star, dimvals, ranks)
     return omega
 end
 
-function pi_from_both(u3, u4, dimvals, ranks)
-    top_pi = zeros(prod(dimvals) - prod(ranks), prod(dimvals))
-    bottom_pi = kron(u4, u3)'
-    return vcat(top_pi, bottom_pi)
+function pi_from_both(u3, u4, dimvals, ranks; p=1)
+    pdims = prod(dimvals)
+    r = prod(ranks)
+    if p == 1
+        top_pi = zeros(pdims - r, pdims)
+        bottom_pi = kron(u4, u3)'
+        return vcat(top_pi, bottom_pi)
+    end
+
+    m = pdims - r
+    pi_result = zeros(pdims, pdims * p)
+    for k in 0:(p-1)
+        col1 = k * pdims + 1
+        col2 = (k + 1) * pdims
+
+        i1, i2 = k * dimvals[1] + 1, (k + 1) * dimvals[1]
+        j1, j2 = k * dimvals[2] + 1, (k + 1) * dimvals[2]
+
+        bottom = kron(
+            @view(u4[j1:j2, :]),
+            @view(u3[i1:i2, :])
+        )'
+
+        pi_result[m+1:end, col1:col2] = bottom
+    end
+    return pi_result
 end
 
 function both_loglike(delta, gamma, u3, u4, sigma, resp, pred, dimvals, ranks)
