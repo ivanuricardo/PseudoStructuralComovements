@@ -141,12 +141,11 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
     precision_matrix = inv(X') * inv(X)
 
     sse = 0.0
-    resid = similar(resp[:, 1])
 
     for i = 2:obs
         yt = @view resp[:, i]
         yt_m1 = @view pred[:, i]
-        resid .= sparse_omega * yt - sparse_pi * yt_m1
+        resid = sparse_omega * yt - sparse_pi * yt_m1
         sse += dot(resid, precision_matrix * resid)
     end
 
