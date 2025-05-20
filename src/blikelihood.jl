@@ -67,8 +67,8 @@ function rand_init(dimvals, ranks)
 
     coef = generate_rrmar_coef(dimvals, ranks; maxeigen=0.9)
 
-    delta = rotate_u!(nullspace(coef.u1'))
-    gamma = rotate_u!(nullspace(coef.u2'))
+    delta = coef.delta
+    gamma = coef.gamma
     delta_init = delta[(n1_r1+1):end, :]
     gamma_init = gamma[(n2_r2+1):end, :]
     return b_pack_params(delta_init, gamma_init, coef.u3, coef.u4, I(prod(dimvals)))
@@ -77,6 +77,8 @@ end
 
 function init_both(resp, pred, dimvals, ranks; pack_params=true)
 
+    pdims = prod(dimvals)
+    r = prod(ranks)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
 
@@ -86,24 +88,26 @@ function init_both(resp, pred, dimvals, ranks; pack_params=true)
         matten(coef, [1, 2], [3, 4], [dimvals[1], dimvals[2], dimvals[1], dimvals[2]])
     flat1 = tenmat(tensor_coef, row=1)
     flat2 = tenmat(tensor_coef, row=2)
-    flat3 = tenmat(tensor_coef, row=3)
-    flat4 = tenmat(tensor_coef, row=4)
     u1 = svd(flat1).U[:, 1:ranks[1]]
     u2 = svd(flat2).U[:, 1:ranks[2]]
-    u3 = svd(flat3).U[:, 1:ranks[1]]
-    u4 = svd(flat4).U[:, 1:ranks[2]]
-
-    s = u3[1, 1]
-    u3 = copy(u3) / s
-    u4 = copy(u4) * s
 
     delta = nullspace(u1')
-    delta_rot = delta * inv(delta[1:(N1_r1), 1:N1_r1])
-    delta_star = delta_rot[(N1_r1+1):end, :]
-
+    rotate_u!(delta)
+    delta_star = delta[(N1_r1+1):end, :]
     gamma = nullspace(u2')
-    gamma_rot = gamma * inv(gamma[1:(N2_r2), 1:N2_r2])
-    gamma_star = gamma_rot[(N2_r2+1):end, :]
+    rotate_u!(gamma)
+    gamma_star = gamma[(N2_r2+1):end, :]
+
+    perm_mat = both_perm_mat(dimvals, ranks)
+    omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
+    pi_mat = omega * perm_mat * coef
+    pi_star = pi_mat[(pdims-r+1):end, :]
+    u4_est, u3_est = nearest_kron(pi_star', size(u2), size(u1))
+
+    s = u3_est[1, 1]
+
+    u3 = u3_est / s
+    u4 = u4_est * s
 
     if pack_params
         return b_pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)))
@@ -187,6 +191,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
+    println(chosen_idx)
 
     return (; chosen_start, num_iters, problem_starts)
 

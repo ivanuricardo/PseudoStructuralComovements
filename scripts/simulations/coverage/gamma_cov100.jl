@@ -7,20 +7,16 @@ true_ranks = [2, 3]
 under_rank = [1, 3]
 over_rank = [3, 3]
 
-sims = 60
+sims = 30
 burnin = 50
 obs = 100 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_ranks)
-u1_true = coef.u1
-u2_true = coef.u2
 u3_true = coef.u3
 u4_true = coef.u4
 
-delta_true = nullspace(u1_true') ./ nullspace(u1_true')[1]
-gamma_true = nullspace(u2_true') ./ nullspace(u2_true')[1]
-u3_rot = u3_true * inv(u3_true[1:2, 1:2])
-u4_rot = u4_true * inv(u4_true[1:3, 1:3])
+delta_true = coef.delta
+gamma_true = coef.gamma
 
 correct_gamma = fill(NaN, 3, sims)
 under_gamma = fill(NaN, 3, sims)

@@ -11,8 +11,8 @@ end
 function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
 
     A = fill(NaN, prod(dimvals), prod(dimvals))
-    u1 = fill(NaN, dimvals[1], ranks[1])
-    u2 = fill(NaN, dimvals[2], ranks[2])
+    delta = fill(NaN, dimvals[1], dimvals[1] - ranks[1])
+    gamma = fill(NaN, dimvals[2], dimvals[2] - ranks[2])
     u3 = fill(NaN, p * dimvals[1], ranks[1])
     u4 = fill(NaN, p * dimvals[2], ranks[2])
     stabit = 0
@@ -21,25 +21,59 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
     u4_cont = Vector{Any}(undef, p)
     while true
         stabit += 1
-        randU1 = randn(dimvals[1], ranks[1])
-        u1 .= svd(randU1).U
-        randU2 = randn(dimvals[2], ranks[2])
-        u2 .= svd(randU2).U
+        delta_star = randn(ranks[1], dimvals[1] - ranks[1])
+        delta .= vcat(I, delta_star)
+        gamma_star = randn(ranks[2], dimvals[2] - ranks[2])
+        gamma .= vcat(I, gamma_star)
+        omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
+
         u3 = randn(dimvals[1], ranks[1])
         u3_scale = u3[1, 1]
-        u1 = copy(u1) * u3_scale
         u3 = copy(u3) / u3_scale
         u4 = randn(dimvals[2], ranks[2])
-        k21 = kron(u2, u1)[:, 1:prod(ranks)]
-        k43 = kron(u4, u3)[:, 1:prod(ranks)]
-        A .= k21 * k43'
+        u4 = copy(u4) * u3_scale
+        pi_mat = pi_from_both(u3, u4, dimvals, ranks)
+        perm_mat = both_perm_mat(dimvals, ranks)
+        A .= inv(omega * perm_mat) * pi_mat
+
         if isstable(A, maxeigen)
             break
         end
     end
 
     sorted_eigs = sort(abs.(eigvals(A)), rev=true)
-    return (; A, u1, u2, u3, u4, stabit, sorted_eigs)
+    return (; A, delta, gamma, u3, u4, stabit, sorted_eigs)
+
+    #=A = fill(NaN, prod(dimvals), prod(dimvals))=#
+    #=u1 = fill(NaN, dimvals[1], ranks[1])=#
+    #=u2 = fill(NaN, dimvals[2], ranks[2])=#
+    #=u3 = fill(NaN, p * dimvals[1], ranks[1])=#
+    #=u4 = fill(NaN, p * dimvals[2], ranks[2])=#
+    #=stabit = 0=#
+    #==#
+    #=u3_cont = Vector{Any}(undef, p)=#
+    #=u4_cont = Vector{Any}(undef, p)=#
+    #=while true=#
+    #=    stabit += 1=#
+    #=    randU1 = randn(dimvals[1], ranks[1])=#
+    #=    u1 .= svd(randU1).U=#
+    #=    randU2 = randn(dimvals[2], ranks[2])=#
+    #=    u2 .= svd(randU2).U=#
+    #=    u3 = randn(dimvals[1], ranks[1])=#
+    #=    u3_scale = u3[1, 1]=#
+    #=    u1 = copy(u1) * u3_scale=#
+    #=    u3 = copy(u3) / u3_scale=#
+    #=    u4 = randn(dimvals[2], ranks[2])=#
+    #=    k21 = kron(u2, u1)[:, 1:prod(ranks)]=#
+    #=    k43 = kron(u4, u3)[:, 1:prod(ranks)]=#
+    #=    A .= k21 * k43'=#
+    #=    if isstable(A, maxeigen)=#
+    #=        break=#
+    #=    end=#
+    #=end=#
+    #==#
+    #=sorted_eigs = sort(abs.(eigvals(A)), rev=true)=#
+    #=return (; A, u1, u2, u3, u4, stabit, sorted_eigs)=#
 end
 
 function simulate_rrmar_data(
