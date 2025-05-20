@@ -24,14 +24,14 @@ over_gamma = fill(NaN, 3, sims)
 correct_cov = fill(NaN, 3, sims)
 under_cov = fill(NaN, 3, sims)
 over_cov = fill(NaN, 3, sims)
-res = similar(resp[:, 1])
+
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin)
     cen_data = data.data .- mean(data.data, dims=2)
 
-    @time correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=500)
-    @time over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)
-    @time under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)
+    correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=500)
+    over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)
+    under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)
 
     correct_gamma[:, i] = correct_reg.gamma_est[2:end]
     under_gamma[:, i] = under_reg.gamma_est[2:end]

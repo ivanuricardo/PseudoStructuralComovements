@@ -33,7 +33,6 @@ over_cov = fill(NaN, 3, sims)
     over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)
     under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)
 
-
     correct_gamma[:, i] = correct_reg.gamma_est[2:end]
     under_gamma[:, i] = under_reg.gamma_est[2:end]
     over_gamma[:, i] = over_reg.gamma_est[2:end]
