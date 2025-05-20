@@ -12,15 +12,10 @@ burnin = 50
 obs = 250 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_ranks)
-u1_true = coef.u1
-u2_true = coef.u2
+delta_true = coef.delta
+gamma_true = coef.gamma
 u3_true = coef.u3
 u4_true = coef.u4
-
-delta_true = nullspace(u1_true') ./ nullspace(u1_true')[1]
-gamma_true = nullspace(u2_true') ./ nullspace(u2_true')[1]
-u3_rot = u3_true * inv(u3_true[1:2, 1:2])
-u4_rot = u4_true * inv(u4_true[1:3, 1:3])
 
 correct_gamma = fill(NaN, 3, sims)
 under_gamma = fill(NaN, 3, sims)
@@ -29,14 +24,14 @@ over_gamma = fill(NaN, 3, sims)
 correct_cov = fill(NaN, 3, sims)
 under_cov = fill(NaN, 3, sims)
 over_cov = fill(NaN, 3, sims)
-
+res = similar(resp[:, 1])
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin)
     cen_data = data.data .- mean(data.data, dims=2)
 
-    correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=2000)
-    over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=2000)
-    under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=2000)
+    @time correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=500)
+    @time over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=500)
+    @time under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=500)
 
     correct_gamma[:, i] = correct_reg.gamma_est[2:end]
     under_gamma[:, i] = under_reg.gamma_est[2:end]

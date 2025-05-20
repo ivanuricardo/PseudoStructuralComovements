@@ -141,18 +141,19 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
     precision_matrix = inv(X') * inv(X)
 
     sse = 0.0
+    resid = similar(resp[:, 1])
 
     for i = 2:obs
-        yt = resp[:, i]
-        yt_m1 = pred[:, i]
-        resid = sparse_omega * yt - sparse_pi * yt_m1
+        yt = @view resp[:, i]
+        yt_m1 = @view pred[:, i]
+        resid .= sparse_omega * yt - sparse_pi * yt_m1
         sse += dot(resid, precision_matrix * resid)
     end
 
     return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=100, num_selected=5)
+function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_starts=25, num_selected=5)
     some_init = init_both(resp, pred, dimvals, ranks)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -191,13 +192,12 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
-    println(chosen_idx)
 
     return (; chosen_start, num_iters, problem_starts)
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=100, num_selected=5)
+function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=25, num_selected=5)
 
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
     td = nothing
@@ -234,7 +234,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
     return (; res, td, num_iters, problem_starts)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-04, num_starts=50, num_selected=5)
+function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-05, num_starts=25, num_selected=5)
 
     perm_mat = both_perm_mat(dimvals, ranks)
     perm_resp = (perm_mat*data)[:, 2:end]

@@ -12,15 +12,10 @@ burnin = 50
 obs = 100 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_ranks)
-u1_true = coef.u1
-u2_true = coef.u2
+delta_true = coef.delta
+gamma_true = coef.gamma
 u3_true = coef.u3
 u4_true = coef.u4
-
-delta_true = nullspace(u1_true') ./ nullspace(u1_true')[1]
-gamma_true = nullspace(u2_true') * inv(nullspace(u2_true')[1:2, 1:2])
-u3_rot = u3_true * inv(u3_true[1:2, 1:2])
-u4_rot = u4_true * inv(u4_true[1:2, 1:2])
 
 correct_delta = fill(NaN, 2, sims)
 under_delta = fill(NaN, 2, sims)
