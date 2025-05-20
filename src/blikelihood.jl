@@ -152,7 +152,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
     return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_starts=25, num_selected=5)
+function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_starts=5, num_selected=3)
     some_init = init_both(resp, pred, dimvals, ranks)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
