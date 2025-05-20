@@ -196,7 +196,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=25, num_selected=5)
+function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=5, num_selected=3)
 
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
     td = nothing
@@ -233,7 +233,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
     return (; res, td, num_iters, problem_starts)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-05, num_starts=25, num_selected=5)
+function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-05, num_starts=5, num_selected=3)
 
     perm_mat = both_perm_mat(dimvals, ranks)
     perm_resp = (perm_mat*data)[:, 2:end]
