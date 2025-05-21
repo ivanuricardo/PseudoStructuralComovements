@@ -152,7 +152,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks)
     return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_starts=5, num_selected=3)
+function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_starts=20, num_selected=5)
     some_init = init_both(resp, pred, dimvals, ranks)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -173,12 +173,13 @@ function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_sta
         res = optimize(
             td,
             both_init,
+            #=LBFGS(),=#
             NewtonTrustRegion(;
-                initial_delta=1e2,   # Δ₀
-                delta_hat=1e4,  # max Δₖ
-                eta=0.01,    # accept step when ρₖ > η
-                rho_lower=0.1,   # shrink when ρₖ < ρ_lower
-                rho_upper=0.9,   # grow   when ρₖ > ρ_upper
+                initial_delta=1e3,      # start near the 2.2e3 step that first reduced f
+                delta_hat=5e4,      # cap region to ~5×10^3 so you don’t waste work on huge proposals
+                eta=0.02,     # accept any step with ρₖ > 0.05 (instead of 0.1)
+                rho_lower=0.05,     # only shrink if ρₖ < 0.05 (more forgiving)
+                rho_upper=0.5,      # grow if ρₖ > 0.7 (easier to expand when things look good)
             ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol),
         )
@@ -191,12 +192,13 @@ function comovement_init(resp, pred, dimvals, ranks; iters=3, tol=1e-05, num_sta
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
+    println(chosen_idx)
 
     return (; chosen_start, num_iters, problem_starts)
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_starts=5, num_selected=3)
+function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=5)
 
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
     td = nothing
@@ -212,15 +214,17 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
         res = optimize(
             td,
             chosen_start[:, i],
-            NewtonTrustRegion(;
-                initial_delta=1e2,   # Δ₀
-                delta_hat=1e4,  # max Δₖ
-                eta=0.01,    # accept step when ρₖ > η
-                rho_lower=0.1,   # shrink when ρₖ < ρ_lower
-                rho_upper=0.9,   # grow   when ρₖ > ρ_upper
+            #=LBFGS(),=#
+            NewtonTrustRegion(
+                initial_delta=1e3,      # start near the 2.2e3 step that first reduced f
+                delta_hat=5e4,      # cap region to ~5×10^3 so you don’t waste work on huge proposals
+                eta=0.02,     # accept any step with ρₖ > 0.05 (instead of 0.1)
+                rho_lower=0.05,     # only shrink if ρₖ < 0.05 (more forgiving)
+                rho_upper=0.5,      # grow if ρₖ > 0.7 (easier to expand when things look good)
             ),
-            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01, store_trace=true),
         )
+        println(res.iterations)
         potential_results[i] = res
         if res.g_residual < 1e-01
             break
@@ -233,7 +237,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=500, tol=1e-05, num_st
     return (; res, td, num_iters, problem_starts)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=500, tol=1e-05, num_starts=5, num_selected=3)
+function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=5)
 
     perm_mat = both_perm_mat(dimvals, ranks)
     perm_resp = (perm_mat*data)[:, 2:end]
