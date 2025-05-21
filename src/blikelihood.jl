@@ -224,7 +224,6 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
             ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01, store_trace=true),
         )
-        println(res.iterations)
         potential_results[i] = res
         if res.g_residual < 1e-01
             break
@@ -233,6 +232,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
     cut_results = potential_results[1:count]
     min_idx = argmin(res.minimum for res in cut_results)
     res = potential_results[min_idx]
+    println(res.iterations)
 
     return (; res, td, num_iters, problem_starts)
 end
