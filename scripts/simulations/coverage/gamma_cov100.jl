@@ -7,7 +7,7 @@ true_ranks = [2, 3]
 under_rank = [1, 3]
 over_rank = [3, 3]
 
-sims = 400
+sims = 100
 burnin = 50
 obs = 100 + burnin
 
