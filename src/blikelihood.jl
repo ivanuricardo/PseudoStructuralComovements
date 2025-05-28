@@ -20,10 +20,10 @@ function b_unpack_params(theta, dimvals, ranks; p=1)
     ll_vec = theta[(idx_u4+1):end]
 
     delta_star = reshape(delta_vec, ranks[1], dimvals[1] - ranks[1])
-    delta = vcat(I(dimvals[1] - ranks[1]), delta_star)
+    delta = vcat(I, delta_star)
 
     gamma_star = reshape(gamma_vec, ranks[2], dimvals[2] - ranks[2])
-    gamma = vcat(I(dimvals[2] - ranks[2]), gamma_star)
+    gamma = vcat(I, gamma_star)
     ll = vec_to_ll(ll_vec, pdims)
 
     if p == 1
@@ -54,14 +54,15 @@ function b_unpack_params(theta, dimvals, ranks; p=1)
 
 end
 
-function b_pack_params(delta, gamma, u3, u4, ll)
+function b_pack_params(delta, gamma, u3, u4, ll; p=1)
     n1, n2 = size(u3)
-    vec_u3 = vecb(u3, n1)
-    removek!(vec_u3, n1 * n2 - 1)
+    true_n1 = n1 ÷ p
+    vec_u3 = vecb(u3, true_n1)
+    removek!(vec_u3, true_n1 * n2 - 1)
     return vcat(vec(delta), vec(gamma), vec_u3, vec(u4), vech(ll))
 end
 
-function rand_init(dimvals, ranks)
+function rand_init(dimvals, ranks; p=1)
     n1_r1 = dimvals[1] - ranks[1]
     n2_r2 = dimvals[2] - ranks[2]
 
@@ -71,11 +72,11 @@ function rand_init(dimvals, ranks)
     gamma = coef.gamma
     delta_init = delta[(n1_r1+1):end, :]
     gamma_init = gamma[(n2_r2+1):end, :]
-    return b_pack_params(delta_init, gamma_init, coef.u3, coef.u4, I(prod(dimvals)))
+    return b_pack_params(delta_init, gamma_init, coef.u3, coef.u4, I(prod(dimvals)); p)
 
 end
 
-function init_both(resp, pred, dimvals, ranks; pack_params=true)
+function init_both(resp, pred, dimvals, ranks; pack_params=true, p=1)
 
     pdims = prod(dimvals)
     r = prod(ranks)
@@ -83,6 +84,9 @@ function init_both(resp, pred, dimvals, ranks; pack_params=true)
     N2_r2 = dimvals[2] - ranks[2]
 
     coef = ols_coef(resp, pred)
+    if p != 1
+        coef = coef[1:pdims, 1:pdims]
+    end
 
     tensor_coef =
         matten(coef, [1, 2], [3, 4], [dimvals[1], dimvals[2], dimvals[1], dimvals[2]])
@@ -109,28 +113,41 @@ function init_both(resp, pred, dimvals, ranks; pack_params=true)
     u3 = u3_est / s
     u4 = u4_est * s
 
+    if p != 1
+        u3_bot = randn(dimvals[1], ranks[1])
+        u4_bot = randn(dimvals[2], ranks[2])
+        u3 = vcat(u3, u3_bot)
+        u4 = vcat(u4, u4_bot)
+    end
+
     if pack_params
-        return b_pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)))
+        return b_pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)); p)
     else
         return (; u1, u2, u3, u4)
     end
 
 end
 
-function both_loglike(theta, resp, pred, dimvals, ranks)
+function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
 
-    delta_rot, gamma_rot, u3, u4, ll = b_unpack_params(theta, dimvals, ranks)
+    delta_rot, gamma_rot, u3, u4, ll = b_unpack_params(theta, dimvals, ranks; p)
     delta_star = delta_rot[(N1_r1+1):end, :]
     gamma_star = gamma_rot[(N2_r2+1):end, :]
 
-    pi_mat = pi_from_both(u3, u4, dimvals, ranks)
+    pi_mat = pi_from_both(u3, u4, dimvals, ranks; p)
 
     obs = size(resp, 2)
     omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
-    sparse_omega = sparse(omega)
-    sparse_pi = sparse(pi_mat)
+    if p > 1
+        omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat, ll)
+        sparse_omega = sparse(omega_tilde)
+        sparse_pi = sparse(pi_tilde)
+    else
+        sparse_omega = sparse(omega)
+        sparse_pi = sparse(pi_mat)
+    end
     det_term = det(0.5 .* (ll * ll' + ll * ll'))
     if det_term <= 0.0
         return 1e10
@@ -157,8 +174,6 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
     obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
-    num_iters = zeros(num_starts)
-    problem_starts = zeros(num_starts)
 
     for i in 1:num_starts
         if i == 1
@@ -183,17 +198,13 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
             ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol),
         )
-        if res.g_residual > 1.0
-            problem_starts[i] = 1
-        end
-        num_iters[i] = res.iterations
         potential_starts[end, i] = res.minimum
         potential_starts[1:(end-1), i] = res.minimizer
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
 
-    return (; chosen_start, num_iters, problem_starts)
+    return chosen_start
 
 end
 
@@ -203,7 +214,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
     td = nothing
     res = nothing
 
-    chosen_start, num_iters, problem_starts = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts, num_selected)
+    chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts, num_selected)
     potential_results = Vector{Any}(undef, size(chosen_start, 2))
 
     count = 0
@@ -233,17 +244,22 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
     res = potential_results[min_idx]
     println(res.iterations)
 
-    return (; res, td, num_iters, problem_starts)
+    return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10)
+function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10, p=1)
 
-    perm_mat = both_perm_mat(dimvals, ranks)
+    if p != 1
+        data = companion_data(data, p)
+        perm_mat = kron(I(p), both_perm_mat(dimvals, ranks))
+    else
+        perm_mat = both_perm_mat(dimvals, ranks)
+    end
     perm_resp = (perm_mat*data)[:, 2:end]
     pred = data[:, 1:(end-1)]
-    perm_cen = perm_resp .- mean(perm_resp, dims=2)
+    resp = perm_resp .- mean(perm_resp, dims=2)
 
-    res, td, num_iters, problem_starts = main_algorithm(perm_cen, pred, dimvals, ranks; iters, tol, num_starts, num_selected)
+    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected)
 
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
@@ -284,8 +300,6 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
         hess_est,
         omega,
         pi_mat,
-        num_iters,
-        problem_starts,
     )
 end
 

@@ -103,7 +103,7 @@ function pi_from_both(u3, u4, dimvals, ranks; p=1)
     return pi_result
 end
 
-function both_loglike(delta, gamma, u3, u4, sigma, resp, pred, dimvals, ranks)
+function both_loglike(delta, gamma, u3, u4, sigma, resp, pred, dimvals, ranks; p=1)
     obs = size(resp, 2)
 
     N1_r1 = dimvals[1] - ranks[1]
@@ -116,11 +116,25 @@ function both_loglike(delta, gamma, u3, u4, sigma, resp, pred, dimvals, ranks)
 
     omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
     pi_mat = pi_from_both(u3, u4, dimvals, ranks)
-
-    logdet_term = logdet(omega * sigma * omega')
-    precision_matrix = inv(omega * sigma * omega')
     sse = 0.0
 
+    if p == 1
+        logdet_term = logdet(omega * sigma * omega')
+        precision_matrix = inv(omega * sigma * omega')
+
+        for i = 2:obs
+            yt = resp[:, i]
+            yt_m1 = pred[:, i]
+            resid = omega * yt - pi_mat * yt_m1
+            sse += dot(resid, precision_matrix * resid)
+        end
+
+        return 0.5 * (obs * logdet_term + sse)
+    end
+
+    omega_tilde, pi_tilde = make_companion(omega, pi_mat)
+    logdet_term = logdet(omega_tilde * sigma * omega_tilde')
+    precision_matrix = inv(omega_tilde * sigma * omega')
     for i = 2:obs
         yt = resp[:, i]
         yt_m1 = pred[:, i]
@@ -128,5 +142,7 @@ function both_loglike(delta, gamma, u3, u4, sigma, resp, pred, dimvals, ranks)
         sse += dot(resid, precision_matrix * resid)
     end
 
-    return 0.5 * (obs * logdet_term + sse)
+
+
+
 end

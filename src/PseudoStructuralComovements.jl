@@ -39,6 +39,7 @@ export insertk!
 export removek!
 export cov_to_ll
 export make_companion
+export companion_data
 export rotate_u!
 export ll_to_cov
 export vec_to_ll

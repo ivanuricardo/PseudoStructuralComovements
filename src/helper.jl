@@ -23,14 +23,31 @@ function rotate_u!(U)
     return U
 end
 
-function make_companion(omega, pi_vec)
-    k = size(pi_vec, 1)
-    p = size(pi_vec, 2) ÷ size(pi_vec, 1)
+function make_companion(omega, pi_mat; ll=nothing)
+    k = size(pi_mat, 1)
+    p = size(pi_mat, 2) ÷ size(pi_mat, 1)
     omega_tilde = diagm(ones(k * p))
     omega_tilde[1:k, 1:k] .= omega
     pi_tilde = diagm(-k => ones(k * p - k))
-    pi_tilde[1:k, :] .= pi_vec
-    return (; omega_tilde, pi_tilde)
+    pi_tilde[1:k, :] .= pi_mat
+    ll_tilde = nothing
+    if !isnothing(ll)
+        ll_tilde = diagm(ones(k * p))
+        ll_tilde[1:k, 1:k] .= ll
+    end
+    return (; omega_tilde, pi_tilde, ll_tilde)
+end
+
+function companion_data(data, p)
+    p_adj = p - 1
+    k, obs = size(data)
+    obs_eff = obs - p_adj
+    Z = Matrix{Float64}(undef, k * (p_adj + 1), obs_eff)
+
+    for i in 0:p_adj
+        Z[(i*k+1):(i+1)*k, :] = data[:, (p_adj-i+1):end-i]
+    end
+    return Z
 end
 
 function insertk!(v::AbstractVector, k::Int; val=1)

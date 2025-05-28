@@ -22,7 +22,6 @@ function rank_selection(data, dimvals; iters=500)
         selected_rank = collect(rank_grid[i])
         num_parameters = system_parameters(dimvals, selected_rank)
         reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters)
-        println(reg.res.iterations)
         ll = -reg.res.minimum
         ictable[1, i] = aic(ll, num_parameters)
         ictable[2, i] = bic(ll, num_parameters, obs)

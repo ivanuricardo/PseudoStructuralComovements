@@ -1,16 +1,13 @@
 using DrWatson, Test
 @quickactivate :PseudoStructuralComovements
 
-# Here you include files using `srcdir`
-# include(srcdir("file.jl"))
-
-# Run test suite
 println("Starting tests")
 ti = time()
 
-@testset "PseudoStructuralComovements tests" begin
+@testset "PseudoStructuralComovements basic test" begin
     @test 1 == 1
 end
+include("./test-blikelihood.jl")
 
 ti = time() - ti
 println("\nTest took total time of:")
