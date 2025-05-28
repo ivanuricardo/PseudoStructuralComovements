@@ -8,7 +8,12 @@ function isstable(A, maxeigen)
     return stab_cond < maxeigen
 end
 
-function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
+function rescale!(A::AbstractVecOrMat, scale::Real)
+    @. A *= scale
+    return A
+end
+
+function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, scale=1)
 
     A = fill(NaN, p * prod(dimvals), p * prod(dimvals))
     delta = fill(NaN, dimvals[1], dimvals[1] - ranks[1])
@@ -31,6 +36,7 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
             count += 1
             u3_range = i:i+dimvals[1]-1
             u3_partial = randn(dimvals[1], ranks[1])
+            rescale!(u3_partial, scale)
             u3_scale[count] = u3_partial[1, 1]
             u3[u3_range, :] .= u3_partial / u3_scale[count]
         end
@@ -39,20 +45,21 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
             count += 1
             u4_range = i:i+dimvals[2]-1
             u4_partial = randn(dimvals[2], ranks[2])
+            rescale!(u4, scale)
             u4[u4_range, :] = u4_partial * u3_scale[count]
         end
         pi_mat = pi_from_both(u3, u4, dimvals, ranks; p)
         perm_mat = both_perm_mat(dimvals, ranks)
         if p == 1
             A .= inv(omega * perm_mat) * pi_mat
-
-            if isstable(A, maxeigen)
-                break
-            end
         else
             omega_tilde, pi_tilde = make_companion(omega, pi_mat)
             large_perm = kron(I(p), perm_mat)
             A .= inv(omega_tilde * large_perm) * pi_tilde
+        end
+
+        if isstable(A, maxeigen)
+            break
         end
     end
 

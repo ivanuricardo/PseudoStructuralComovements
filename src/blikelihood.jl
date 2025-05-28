@@ -54,19 +54,19 @@ function b_unpack_params(theta, dimvals, ranks; p=1)
 
 end
 
-function b_pack_params(delta, gamma, u3, u4, ll; p=1)
+function b_pack_params(delta_star, gamma_star, u3, u4, ll; p=1)
     n1, n2 = size(u3)
     true_n1 = n1 ÷ p
     vec_u3 = vecb(u3, true_n1)
     removek!(vec_u3, true_n1 * n2 - 1)
-    return vcat(vec(delta), vec(gamma), vec_u3, vec(u4), vech(ll))
+    return vcat(vec(delta_star), vec(gamma_star), vec_u3, vec(u4), vech(ll))
 end
 
 function rand_init(dimvals, ranks; p=1)
     n1_r1 = dimvals[1] - ranks[1]
     n2_r2 = dimvals[2] - ranks[2]
 
-    coef = generate_rrmar_coef(dimvals, ranks; maxeigen=0.9)
+    coef = generate_rrmar_coef(dimvals, ranks; p, maxeigen=0.9)
 
     delta = coef.delta
     gamma = coef.gamma
@@ -115,7 +115,9 @@ function init_both(resp, pred, dimvals, ranks; pack_params=true, p=1)
 
     if p != 1
         u3_bot = randn(dimvals[1], ranks[1])
-        u4_bot = randn(dimvals[2], ranks[2])
+        s_alt = u3_bot[1, 1]
+        u3_bot = copy(u3_bot) / s_alt
+        u4_bot = randn(dimvals[2], ranks[2]) * s_alt
         u3 = vcat(u3, u3_bot)
         u4 = vcat(u4, u4_bot)
     end

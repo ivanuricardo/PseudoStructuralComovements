@@ -12,8 +12,6 @@
     @test size(gamma) == (dimvals[2], dimvals[2] - ranks[2])
 
 
-    theta_repacked = b_pack_params(delta, gamma, u3, u4, ll; p)
-
     p = 2
     theta = randn(101)
 
@@ -21,3 +19,17 @@
     @test size(u3) == (p * dimvals[1], ranks[1])
     @test size(u4) == (p * dimvals[2], ranks[2])
 end
+
+@testset "unpacking and repacking parameters" begin
+    dimvals = [3, 4]
+    ranks = [2, 1]
+    p = 2
+
+    data = randn(12, 100)
+    data = companion_data(data, p)
+    perm_mat = kron(I(p), both_perm_mat(dimvals, ranks))
+    perm_resp = (perm_mat*data)[:, 2:end]
+    pred = data[:, 1:(end-1)]
+    resp = perm_resp .- mean(perm_resp, dims=2)
+end
+
