@@ -184,7 +184,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
             both_init = copy(some_init)
         else
             #=both_init = copy(some_init) .+ rand_init(dimvals, ranks)=#
-            both_init = rand_init(dimvals, ranks)
+            both_init = rand_init(dimvals, ranks; p)
         end
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
