@@ -34,8 +34,10 @@ function b_unpack_params(theta, dimvals, ranks; p=1)
         return (; delta, gamma, u3, u4, ll)
     end
 
-    u3 = zeros(p * dimvals[1], ranks[1])
-    u4 = zeros(p * dimvals[2], ranks[2])
+    t_u3 = eltype(u3_vec)
+    t_u4 = eltype(u4_vec)
+    u3 = zeros(t_u3, p * dimvals[1], ranks[1])
+    u4 = zeros(t_u4, p * dimvals[2], ranks[2])
     insertk!(u3_vec, num_u3 ÷ p)
     for k in 0:(p-1)
 
@@ -171,11 +173,11 @@ function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=20, num_selected=10)
-    some_init = init_both(resp, pred, dimvals, ranks)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=20, num_selected=10, p=1)
+    some_init = init_both(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
-    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
+    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks; p)
 
     for i in 1:num_starts
         if i == 1

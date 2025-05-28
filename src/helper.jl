@@ -23,18 +23,22 @@ function rotate_u!(U)
     return U
 end
 
-function make_companion(omega, pi_mat; ll=nothing)
+function make_companion(omega::AbstractMatrix{T}, pi_mat::AbstractMatrix{T}; ll::Union{AbstractMatrix{T},Nothing}=nothing) where {T}
     k = size(pi_mat, 1)
-    p = size(pi_mat, 2) ÷ size(pi_mat, 1)
-    omega_tilde = diagm(ones(k * p))
+    p = size(pi_mat, 2) ÷ k
+
+    omega_tilde = diagm(0 => ones(T, k * p))
     omega_tilde[1:k, 1:k] .= omega
-    pi_tilde = diagm(-k => ones(k * p - k))
+
+    pi_tilde = diagm(-k => ones(T, k * p - k))
     pi_tilde[1:k, :] .= pi_mat
-    ll_tilde = nothing
-    if !isnothing(ll)
-        ll_tilde = diagm(ones(k * p))
-        ll_tilde[1:k, 1:k] .= ll
+
+    ll_tilde = isnothing(ll) ? nothing : begin
+        temp = diagm(0 => ones(T, k * p))
+        temp[1:k, 1:k] .= ll
+        temp
     end
+
     return (; omega_tilde, pi_tilde, ll_tilde)
 end
 

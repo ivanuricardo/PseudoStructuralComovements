@@ -85,7 +85,8 @@ function pi_from_both(u3, u4, dimvals, ranks; p=1)
     end
 
     m = pdims - r
-    pi_result = zeros(pdims, pdims * p)
+    t_u3 = eltype(u3)
+    pi_result = zeros(t_u3, pdims, pdims * p)
     for k in 0:(p-1)
         col1 = k * pdims + 1
         col2 = (k + 1) * pdims
