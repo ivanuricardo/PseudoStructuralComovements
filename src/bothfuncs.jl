@@ -138,7 +138,7 @@ function both_loglike(delta, gamma, u3, u4, sigma, resp, pred, dimvals, ranks; p
     for i = 2:obs
         yt = resp[:, i]
         yt_m1 = pred[:, i]
-        resid = omega * yt - pi_mat * yt_m1
+        resid = omega_tilde * yt - pi_tilde * yt_m1
         sse += dot(resid, precision_matrix * resid)
     end
 

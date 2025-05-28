@@ -141,7 +141,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
     obs = size(resp, 2)
     omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
     if p > 1
-        omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat, ll)
+        omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat; ll)
         sparse_omega = sparse(omega_tilde)
         sparse_pi = sparse(pi_tilde)
     else
