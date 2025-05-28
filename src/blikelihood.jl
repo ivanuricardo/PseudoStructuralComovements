@@ -124,9 +124,8 @@ function init_both(resp, pred, dimvals, ranks; pack_params=true, p=1)
 
     if pack_params
         return b_pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)); p)
-    else
-        return (; u1, u2, u3, u4)
     end
+    return (; u1, u2, u3, u4)
 
 end
 
@@ -158,6 +157,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
     logdet_term = log(det_term)
     X = sparse_omega * ll
     precision_matrix = inv(X') * inv(X)
+    sparse_precision = sparse(precision_matrix)
 
     sse = 0.0
 
@@ -165,7 +165,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
         yt = @view resp[:, i]
         yt_m1 = @view pred[:, i]
         resid = sparse_omega * yt - sparse_pi * yt_m1
-        sse += dot(resid, precision_matrix * resid)
+        sse += dot(resid, sparse_precision * resid)
     end
 
     return 0.5 * ((obs - 1) * logdet_term + sse)
