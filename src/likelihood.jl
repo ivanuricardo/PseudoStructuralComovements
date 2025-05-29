@@ -1,5 +1,5 @@
 
-function b_unpack_params(theta, dimvals, ranks; p=1)
+function unpack_params(theta, dimvals, ranks; p=1)
     pdims = prod(dimvals)
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
@@ -56,7 +56,7 @@ function b_unpack_params(theta, dimvals, ranks; p=1)
 
 end
 
-function b_pack_params(delta_star, gamma_star, u3, u4, ll; p=1)
+function pack_params(delta_star, gamma_star, u3, u4, ll; p=1)
     n1, n2 = size(u3)
     true_n1 = n1 ÷ p
     vec_u3 = vecb(u3, true_n1)
@@ -74,11 +74,11 @@ function rand_init(dimvals, ranks; p=1)
     gamma = coef.gamma
     delta_init = delta[(n1_r1+1):end, :]
     gamma_init = gamma[(n2_r2+1):end, :]
-    return b_pack_params(delta_init, gamma_init, coef.u3, coef.u4, I(prod(dimvals)); p)
+    return pack_params(delta_init, gamma_init, coef.u3, coef.u4, I(prod(dimvals)); p)
 
 end
 
-function init_both(resp, pred, dimvals, ranks; pack_params=true, p=1)
+function init_alg(resp, pred, dimvals, ranks; p=1)
 
     pdims = prod(dimvals)
     r = prod(ranks)
@@ -124,18 +124,15 @@ function init_both(resp, pred, dimvals, ranks; pack_params=true, p=1)
         u4 = vcat(u4, u4_bot)
     end
 
-    if pack_params
-        return b_pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)); p)
-    end
-    return (; u1, u2, u3, u4)
+    return pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)); p)
 
 end
 
-function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
+function loglike(theta, resp, pred, dimvals, ranks; p=1)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
 
-    delta_rot, gamma_rot, u3, u4, ll = b_unpack_params(theta, dimvals, ranks; p)
+    delta_rot, gamma_rot, u3, u4, ll = unpack_params(theta, dimvals, ranks; p)
     delta_star = delta_rot[(N1_r1+1):end, :]
     gamma_star = gamma_rot[(N2_r2+1):end, :]
 
@@ -174,10 +171,10 @@ function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
 end
 
 function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=20, num_selected=10, p=1)
-    some_init = init_both(resp, pred, dimvals, ranks; p)
+    some_init = init_alg(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
-    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks; p)
+    obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
 
     for i in 1:num_starts
         if i == 1
@@ -214,7 +211,7 @@ end
 
 function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10, p=1)
 
-    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks; p)
+    obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     td = nothing
     res = nothing
 
@@ -278,7 +275,7 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
     theta_est = Optim.minimizer(res)
 
     delta_est, gamma_est, u3_est, u4_est, sigma_est =
-        b_unpack_params(theta_est, dimvals, ranks; p)
+        unpack_params(theta_est, dimvals, ranks; p)
 
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     stderrs = sqrt.(abs.(diag(inv(hess_pd))))

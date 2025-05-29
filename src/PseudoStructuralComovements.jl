@@ -13,10 +13,11 @@ using Distributions
 using NLSolversBase
 using ProximalOperators
 
-include("blikelihood.jl")
-export b_unpack_params
-export b_pack_params
-export init_both
+include("likelihood.jl")
+export unpack_params
+export pack_params
+export init_alg
+export loglike
 export rand_init
 export comovement_reg
 
@@ -29,7 +30,6 @@ export b_right2
 export b_right3
 export omega_from_both
 export pi_from_both
-export both_loglike
 export b_secondrow
 export b_thirdrow
 export b_fourthrow
