@@ -1,13 +1,13 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
-Random.seed!(20250421)
+Random.seed!(20250522)
 
 dimvals = [3, 4]
 true_ranks = [2, 2]
 under_rank = [2, 1]
 over_rank = [2, 3]
 
-sims = 100
+sims = 1000
 burnin = 50
 obs = 250 + burnin
 

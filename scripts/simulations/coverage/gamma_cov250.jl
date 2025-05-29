@@ -1,6 +1,6 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
-Random.seed!(20250421)
+Random.seed!(20250522)
 
 dimvals = [3, 4]
 true_ranks = [2, 3]
