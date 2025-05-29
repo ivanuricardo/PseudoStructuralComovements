@@ -22,17 +22,17 @@ export rand_init
 export comovement_reg
 
 include("./bothfuncs.jl")
-export both_blockvec
-export both_perm_mat
-export b_top_left
-export b_right1
-export b_right2
-export b_right3
-export omega_from_both
-export pi_from_both
-export b_secondrow
-export b_thirdrow
-export b_fourthrow
+export blockvec
+export perm_matrix
+export top_left
+export right1
+export right2
+export right3
+export create_omega
+export create_pi
+export create_second_row
+export create_third_row
+export create_fourth_row
 
 include("./helper.jl")
 export insertk!

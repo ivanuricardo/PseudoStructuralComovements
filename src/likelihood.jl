@@ -104,8 +104,8 @@ function init_alg(resp, pred, dimvals, ranks; p=1)
     rotate_u!(gamma)
     gamma_star = gamma[(N2_r2+1):end, :]
 
-    perm_mat = both_perm_mat(dimvals, ranks)
-    omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
+    perm_mat = perm_matrix(dimvals, ranks)
+    omega = create_omega(delta_star, gamma_star, dimvals, ranks)
     pi_mat = omega * perm_mat * coef
     pi_star = pi_mat[(pdims-r+1):end, :]
     u4_est, u3_est = nearest_kron(pi_star', size(u2), size(u1))
@@ -136,10 +136,10 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     delta_star = delta_rot[(N1_r1+1):end, :]
     gamma_star = gamma_rot[(N2_r2+1):end, :]
 
-    pi_mat = pi_from_both(u3, u4, dimvals, ranks; p)
+    pi_mat = create_pi(u3, u4, dimvals, ranks; p)
 
     obs = size(resp, 2)
-    omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
+    omega = create_omega(delta_star, gamma_star, dimvals, ranks)
     if p > 1
         omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat; ll)
         sparse_omega = sparse(omega_tilde)
@@ -252,9 +252,9 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
 
     if p != 1
         data = companion_data(data, p)
-        perm_mat = kron(I(p), both_perm_mat(dimvals, ranks))
+        perm_mat = kron(I(p), perm_matrix(dimvals, ranks))
     else
-        perm_mat = both_perm_mat(dimvals, ranks)
+        perm_mat = perm_matrix(dimvals, ranks)
     end
     perm_resp = (perm_mat*data)[:, 2:end]
     pred = data[:, 1:(end-1)]
@@ -286,8 +286,8 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
     delta_star = delta_est[(dimvals[1]-ranks[1]+1):end, :]
     gamma_star = gamma_est[(dimvals[2]-ranks[2]+1):end, :]
 
-    omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
-    pi_mat = pi_from_both(u3_est, u4_est, dimvals, ranks; p)
+    omega = create_omega(delta_star, gamma_star, dimvals, ranks)
+    pi_mat = create_pi(u3_est, u4_est, dimvals, ranks; p)
 
     return (;
         res,

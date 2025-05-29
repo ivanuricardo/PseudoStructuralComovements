@@ -28,7 +28,7 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, scale=1)
         delta .= vcat(I, delta_star)
         gamma_star = randn(ranks[2], dimvals[2] - ranks[2])
         gamma .= vcat(I, gamma_star)
-        omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
+        omega = create_omega(delta_star, gamma_star, dimvals, ranks)
         u3_scale = fill(NaN, p)
         count = 0
 
@@ -48,8 +48,8 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, scale=1)
             rescale!(u4, scale)
             u4[u4_range, :] = u4_partial * u3_scale[count]
         end
-        pi_mat = pi_from_both(u3, u4, dimvals, ranks; p)
-        perm_mat = both_perm_mat(dimvals, ranks)
+        pi_mat = create_pi(u3, u4, dimvals, ranks; p)
+        perm_mat = perm_matrix(dimvals, ranks)
         if p == 1
             A .= inv(omega * perm_mat) * pi_mat
         else
