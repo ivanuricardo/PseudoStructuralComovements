@@ -75,9 +75,10 @@ function simulate_rrmar_data(
     snr=0.7,
     burnin=100,
     matrix_err=false,
+    p=1
 )
     if isnothing(A)
-        A = generate_rrmar_coef(dimvals, ranks)
+        A = generate_rrmar_coef(dimvals, ranks; p)
     end
 
     dim1, dim2 = dimvals[1], dimvals[2]
@@ -89,7 +90,7 @@ function simulate_rrmar_data(
     pre_sigma2, pre_sigma1 = nearest_kron(sigma, (dim2, dim2), (dim1, dim1))
     sigma1 = abs.(pre_sigma1) / norm(pre_sigma1)
     sigma2 = abs.(pre_sigma2) * norm(pre_sigma1)
-    pre_data = zeros(dimvals[1] * dimvals[2], obs)
+    pre_data = zeros(p * dimvals[1] * dimvals[2], obs)
     round!(sigma1; digits=15)
     round!(sigma2; digits=15)
 
@@ -105,8 +106,18 @@ function simulate_rrmar_data(
         return (; data, coef, sigma1, sigma2)
     else
         d = MultivariateNormal(zeros(dimvals[1] * dimvals[2]), diagerr)
+        if p == 1
+            for i = 2:obs
+                vec_epsilon = rand(d)
+                pre_data[:, i] .= coef * pre_data[:, i-1] + vec_epsilon
+            end
+            data = pre_data[:, (burnin+1):end]
+            sigma = copy(diagerr)
+            return (; data, coef, sigma)
+        end
+
         for i = 2:obs
-            vec_epsilon = rand(d)
+            vec_epsilon = vcat(rand(d), zeros(prod(dimvals) * (p - 1)))
             pre_data[:, i] .= coef * pre_data[:, i-1] + vec_epsilon
         end
         data = pre_data[:, (burnin+1):end]
