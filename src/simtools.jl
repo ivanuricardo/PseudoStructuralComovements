@@ -8,7 +8,12 @@ function isstable(A, maxeigen)
     return stab_cond < maxeigen
 end
 
-function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
+function rescale!(A::AbstractVecOrMat, scale::Real)
+    @. A *= scale
+    return A
+end
+
+function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, scale=1)
 
     A = fill(NaN, p * prod(dimvals), p * prod(dimvals))
     delta = fill(NaN, dimvals[1], dimvals[1] - ranks[1])
@@ -31,6 +36,7 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
             count += 1
             u3_range = i:i+dimvals[1]-1
             u3_partial = randn(dimvals[1], ranks[1])
+            rescale!(u3_partial, scale)
             u3_scale[count] = u3_partial[1, 1]
             u3[u3_range, :] .= u3_partial / u3_scale[count]
         end
@@ -39,20 +45,21 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
             count += 1
             u4_range = i:i+dimvals[2]-1
             u4_partial = randn(dimvals[2], ranks[2])
+            rescale!(u4, scale)
             u4[u4_range, :] = u4_partial * u3_scale[count]
         end
         pi_mat = pi_from_both(u3, u4, dimvals, ranks; p)
         perm_mat = both_perm_mat(dimvals, ranks)
         if p == 1
             A .= inv(omega * perm_mat) * pi_mat
-
-            if isstable(A, maxeigen)
-                break
-            end
         else
             omega_tilde, pi_tilde = make_companion(omega, pi_mat)
             large_perm = kron(I(p), perm_mat)
             A .= inv(omega_tilde * large_perm) * pi_tilde
+        end
+
+        if isstable(A, maxeigen)
+            break
         end
     end
 
@@ -68,9 +75,10 @@ function simulate_rrmar_data(
     snr=0.7,
     burnin=100,
     matrix_err=false,
+    p=1
 )
     if isnothing(A)
-        A = generate_rrmar_coef(dimvals, ranks)
+        A = generate_rrmar_coef(dimvals, ranks; p)
     end
 
     dim1, dim2 = dimvals[1], dimvals[2]
@@ -82,7 +90,7 @@ function simulate_rrmar_data(
     pre_sigma2, pre_sigma1 = nearest_kron(sigma, (dim2, dim2), (dim1, dim1))
     sigma1 = abs.(pre_sigma1) / norm(pre_sigma1)
     sigma2 = abs.(pre_sigma2) * norm(pre_sigma1)
-    pre_data = zeros(dimvals[1] * dimvals[2], obs)
+    pre_data = zeros(p * dimvals[1] * dimvals[2], obs)
     round!(sigma1; digits=15)
     round!(sigma2; digits=15)
 
@@ -98,8 +106,18 @@ function simulate_rrmar_data(
         return (; data, coef, sigma1, sigma2)
     else
         d = MultivariateNormal(zeros(dimvals[1] * dimvals[2]), diagerr)
+        if p == 1
+            for i = 2:obs
+                vec_epsilon = rand(d)
+                pre_data[:, i] .= coef * pre_data[:, i-1] + vec_epsilon
+            end
+            data = pre_data[:, (burnin+1):end]
+            sigma = copy(diagerr)
+            return (; data, coef, sigma)
+        end
+
         for i = 2:obs
-            vec_epsilon = rand(d)
+            vec_epsilon = vcat(rand(d), zeros(prod(dimvals) * (p - 1)))
             pre_data[:, i] .= coef * pre_data[:, i-1] + vec_epsilon
         end
         data = pre_data[:, (burnin+1):end]
