@@ -34,8 +34,10 @@ function b_unpack_params(theta, dimvals, ranks; p=1)
         return (; delta, gamma, u3, u4, ll)
     end
 
-    u3 = zeros(p * dimvals[1], ranks[1])
-    u4 = zeros(p * dimvals[2], ranks[2])
+    t_u3 = eltype(u3_vec)
+    t_u4 = eltype(u4_vec)
+    u3 = zeros(t_u3, p * dimvals[1], ranks[1])
+    u4 = zeros(t_u4, p * dimvals[2], ranks[2])
     insertk!(u3_vec, num_u3 ÷ p)
     for k in 0:(p-1)
 
@@ -54,19 +56,19 @@ function b_unpack_params(theta, dimvals, ranks; p=1)
 
 end
 
-function b_pack_params(delta, gamma, u3, u4, ll; p=1)
+function b_pack_params(delta_star, gamma_star, u3, u4, ll; p=1)
     n1, n2 = size(u3)
     true_n1 = n1 ÷ p
     vec_u3 = vecb(u3, true_n1)
     removek!(vec_u3, true_n1 * n2 - 1)
-    return vcat(vec(delta), vec(gamma), vec_u3, vec(u4), vech(ll))
+    return vcat(vec(delta_star), vec(gamma_star), vec_u3, vec(u4), vech(ll))
 end
 
 function rand_init(dimvals, ranks; p=1)
     n1_r1 = dimvals[1] - ranks[1]
     n2_r2 = dimvals[2] - ranks[2]
 
-    coef = generate_rrmar_coef(dimvals, ranks; maxeigen=0.9)
+    coef = generate_rrmar_coef(dimvals, ranks; p, maxeigen=0.9)
 
     delta = coef.delta
     gamma = coef.gamma
@@ -115,16 +117,17 @@ function init_both(resp, pred, dimvals, ranks; pack_params=true, p=1)
 
     if p != 1
         u3_bot = randn(dimvals[1], ranks[1])
-        u4_bot = randn(dimvals[2], ranks[2])
+        s_alt = u3_bot[1, 1]
+        u3_bot = copy(u3_bot) / s_alt
+        u4_bot = randn(dimvals[2], ranks[2]) * s_alt
         u3 = vcat(u3, u3_bot)
         u4 = vcat(u4, u4_bot)
     end
 
     if pack_params
         return b_pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)); p)
-    else
-        return (; u1, u2, u3, u4)
     end
+    return (; u1, u2, u3, u4)
 
 end
 
@@ -141,7 +144,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
     obs = size(resp, 2)
     omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
     if p > 1
-        omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat, ll)
+        omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat; ll)
         sparse_omega = sparse(omega_tilde)
         sparse_pi = sparse(pi_tilde)
     else
@@ -156,6 +159,7 @@ function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
     logdet_term = log(det_term)
     X = sparse_omega * ll
     precision_matrix = inv(X') * inv(X)
+    sparse_precision = sparse(precision_matrix)
 
     sse = 0.0
 
@@ -163,24 +167,24 @@ function both_loglike(theta, resp, pred, dimvals, ranks; p=1)
         yt = @view resp[:, i]
         yt_m1 = @view pred[:, i]
         resid = sparse_omega * yt - sparse_pi * yt_m1
-        sse += dot(resid, precision_matrix * resid)
+        sse += dot(resid, sparse_precision * resid)
     end
 
     return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=20, num_selected=10)
-    some_init = init_both(resp, pred, dimvals, ranks)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=20, num_selected=10, p=1)
+    some_init = init_both(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
-    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
+    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks; p)
 
     for i in 1:num_starts
         if i == 1
             both_init = copy(some_init)
         else
             #=both_init = copy(some_init) .+ rand_init(dimvals, ranks)=#
-            both_init = rand_init(dimvals, ranks)
+            both_init = rand_init(dimvals, ranks; p)
         end
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
@@ -208,13 +212,13 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10)
+function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10, p=1)
 
-    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
+    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks; p)
     td = nothing
     res = nothing
 
-    chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts, num_selected)
+    chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts, num_selected, p)
     potential_results = Vector{Any}(undef, size(chosen_start, 2))
 
     count = 0
@@ -232,7 +236,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
                 rho_lower=0.05,     # only shrink if ρₖ < 0.05 (more forgiving)
                 rho_upper=0.5,      # grow if ρₖ > 0.7 (easier to expand when things look good)
             ),
-            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01, store_trace=true),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
         if res.g_residual < 1e-01
@@ -259,7 +263,7 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
     pred = data[:, 1:(end-1)]
     resp = perm_resp .- mean(perm_resp, dims=2)
 
-    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected)
+    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
 
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
@@ -274,7 +278,7 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
     theta_est = Optim.minimizer(res)
 
     delta_est, gamma_est, u3_est, u4_est, sigma_est =
-        b_unpack_params(theta_est, dimvals, ranks)
+        b_unpack_params(theta_est, dimvals, ranks; p)
 
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     stderrs = sqrt.(abs.(diag(inv(hess_pd))))
@@ -286,7 +290,7 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
     gamma_star = gamma_est[(dimvals[2]-ranks[2]+1):end, :]
 
     omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
-    pi_mat = pi_from_both(u3_est, u4_est, dimvals, ranks)
+    pi_mat = pi_from_both(u3_est, u4_est, dimvals, ranks; p)
 
     return (;
         res,
