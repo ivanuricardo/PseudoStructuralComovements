@@ -21,7 +21,7 @@ export loglike
 export rand_init
 export comovement_reg
 
-include("./bothfuncs.jl")
+include("./likelihood_helpers.jl")
 export blockvec
 export perm_matrix
 export top_left
