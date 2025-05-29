@@ -31,9 +31,10 @@ end
     perm_resp = (perm_mat*data)[:, 2:end]
     pred = data[:, 1:(end-1)]
     resp = perm_resp .- mean(perm_resp, dims=2)
-    iters = 5
+    iters = 100
     tol = 1e-05
     num_starts = 20
+    num_selected = 10
     i = 1
 end
 

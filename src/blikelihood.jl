@@ -212,13 +212,13 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10)
+function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10, p=1)
 
-    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks)
+    obj = tet -> both_loglike(tet, resp, pred, dimvals, ranks; p)
     td = nothing
     res = nothing
 
-    chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts, num_selected)
+    chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-01, num_starts, num_selected, p)
     potential_results = Vector{Any}(undef, size(chosen_start, 2))
 
     count = 0
@@ -236,7 +236,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
                 rho_lower=0.05,     # only shrink if ρₖ < 0.05 (more forgiving)
                 rho_upper=0.5,      # grow if ρₖ > 0.7 (easier to expand when things look good)
             ),
-            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01, store_trace=true),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
         if res.g_residual < 1e-01
@@ -263,7 +263,7 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
     pred = data[:, 1:(end-1)]
     resp = perm_resp .- mean(perm_resp, dims=2)
 
-    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected)
+    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
 
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
@@ -278,7 +278,7 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
     theta_est = Optim.minimizer(res)
 
     delta_est, gamma_est, u3_est, u4_est, sigma_est =
-        b_unpack_params(theta_est, dimvals, ranks)
+        b_unpack_params(theta_est, dimvals, ranks; p)
 
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     stderrs = sqrt.(abs.(diag(inv(hess_pd))))
@@ -290,7 +290,7 @@ function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=2
     gamma_star = gamma_est[(dimvals[2]-ranks[2]+1):end, :]
 
     omega = omega_from_both(delta_star, gamma_star, dimvals, ranks)
-    pi_mat = pi_from_both(u3_est, u4_est, dimvals, ranks)
+    pi_mat = pi_from_both(u3_est, u4_est, dimvals, ranks; p)
 
     return (;
         res,
