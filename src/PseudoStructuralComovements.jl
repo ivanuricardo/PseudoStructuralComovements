@@ -58,7 +58,7 @@ export bic
 export hqc
 export rank_selection
 
-include("simtools.jl")
+include("simulation_helpers.jl")
 export isstable
 export generate_rrmar_coef
 export simulate_rrmar_data

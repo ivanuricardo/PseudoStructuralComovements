@@ -26,7 +26,6 @@ A = generate_rrmar_coef(dimvals, ranks)
     smallaic11[:, s] .= smallicest.aic_sel[1:2]
     smallbic11[:, s] .= smallicest.bic_sel[1:2]
 
-    reg = comovement_reg(medmar.data, dimvals, [1, 1], iters=100)
     medicest = rank_selection(medmar.data, dimvals; iters=100)
     medaic11[:, s] .= medicest.aic_sel[1:2]
     medbic11[:, s] .= medicest.bic_sel[1:2]
