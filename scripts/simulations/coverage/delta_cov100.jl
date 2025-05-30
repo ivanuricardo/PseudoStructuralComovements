@@ -1,6 +1,6 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
-Random.seed!(20250522)
+Random.seed!(20250527)
 
 dimvals = [3, 4]
 true_ranks = [2, 2]
@@ -12,6 +12,7 @@ burnin = 50
 obs = 100 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_ranks)
+coef.sorted_eigs
 delta_true = coef.delta
 gamma_true = coef.gamma
 u3_true = coef.u3
