@@ -170,7 +170,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * logdet_term + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=20, num_selected=10, p=1)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=30, num_selected=15, p=1)
     some_init = init_alg(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -209,7 +209,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10, p=1)
+function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_starts=30, num_selected=15, p=1)
 
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     td = nothing
@@ -248,7 +248,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=20, num_selected=10, p=1)
+function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=30, num_selected=15, p=1)
 
     if p != 1
         data = companion_data(data, p)
