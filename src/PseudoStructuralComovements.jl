@@ -7,11 +7,8 @@ using Reexport
 using TensorToolbox
 using Optim
 using SparseArrays
-using ForwardDiff
-using ReverseDiff
 using Distributions
 using NLSolversBase
-using ProximalOperators
 
 include("likelihood.jl")
 export unpack_params
