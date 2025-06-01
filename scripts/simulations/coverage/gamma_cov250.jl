@@ -7,12 +7,11 @@ true_ranks = [2, 3]
 under_rank = [1, 3]
 over_rank = [3, 3]
 
-sims = 1000
+sims = 100
 burnin = 50
 obs = 250 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_ranks)
-coef.sorted_eigs
 delta_true = coef.delta
 gamma_true = coef.gamma
 u3_true = coef.u3
