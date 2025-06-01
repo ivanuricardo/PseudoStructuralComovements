@@ -1,6 +1,6 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
-Random.seed!(20250527)
+Random.seed!(20250530)
 
 dimvals = [3, 4]
 true_ranks = [2, 2]
@@ -49,6 +49,10 @@ over_cov = fill(NaN, 2, sims)
     over_lower = over_reg.delta_est[2:end] - 1.96 .* over_reg.delta_stderr
     over_cov[:, i] = over_lower .< delta_true[2:end] .< over_upper
 end
+
+density(filter(!isnan, correct_delta[2, :]))
+density(filter(!isnan, over_delta[1, :]))
+density(filter(!isnan, under_delta[1, :]))
 
 save(datadir("coverage/delta_cov_results100.jld2"), Dict(
     "correct_delta" => correct_delta,
