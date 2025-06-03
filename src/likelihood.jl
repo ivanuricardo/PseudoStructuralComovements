@@ -233,7 +233,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
                 rho_lower=0.2,     # only shrink if ρₖ < 0.2 (delay shrinking)
                 rho_upper=0.5,      # grow if ρₖ > 0.7 (easier to expand when things look good)
             ),
-            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01, store_trace=true),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
         if res.g_residual < 1e-01

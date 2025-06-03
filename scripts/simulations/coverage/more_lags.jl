@@ -6,12 +6,13 @@ dimvals = [3, 4]
 true_ranks = [2, 2]
 under_rank = [2, 1]
 over_rank = [2, 3]
+p = 2
 
-sims = 1000
+sims = 250
 burnin = 50
-obs = 250 + burnin
+obs = 100 + burnin
 
-coef = generate_rrmar_coef(dimvals, true_ranks)
+coef = generate_rrmar_coef(dimvals, true_ranks; p)
 delta_true = coef.delta
 gamma_true = coef.gamma
 u3_true = coef.u3
@@ -26,10 +27,10 @@ under_cov = fill(NaN, 2, sims)
 over_cov = fill(NaN, 2, sims)
 
 @showprogress Threads.@threads for i = 1:sims
-    data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin)
+    data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin, p)
     cen_data = data.data .- mean(data.data, dims=2)
 
-    correct_reg = comovement_reg(cen_data, dimvals, true_ranks; iters=100)
+    correct_reg = comovement_reg(cen_data, dimvals, true_ranks; iters=100, p)
     over_reg = comovement_reg(cen_data, dimvals, over_rank; iters=100)
     under_reg = comovement_reg(cen_data, dimvals, under_rank; iters=100)
 
@@ -50,7 +51,11 @@ over_cov = fill(NaN, 2, sims)
     over_cov[:, i] = over_lower .< delta_true[2:end] .< over_upper
 end
 
-save(datadir("coverage/delta_cov_results250.jld2"), Dict(
+density(filter(!isnan, correct_delta[2, :]))
+density(filter(!isnan, over_delta[1, :]))
+density(filter(!isnan, under_delta[1, :]))
+
+save(datadir("coverage/delta_cov_results100.jld2"), Dict(
     "correct_delta" => correct_delta,
     "under_delta" => under_delta,
     "over_delta" => over_delta,
