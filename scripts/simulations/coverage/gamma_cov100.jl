@@ -6,12 +6,13 @@ dimvals = [3, 4]
 true_ranks = [2, 3]
 under_rank = [1, 3]
 over_rank = [3, 3]
+p = 2
 
 sims = 1000
 burnin = 50
 obs = 100 + burnin
 
-coef = generate_rrmar_coef(dimvals, true_ranks)
+coef = generate_rrmar_coef(dimvals, true_ranks; p)
 delta_true = coef.delta
 gamma_true = coef.gamma
 u3_true = coef.u3
@@ -26,12 +27,12 @@ under_cov = fill(NaN, 3, sims)
 over_cov = fill(NaN, 3, sims)
 
 @showprogress Threads.@threads for i = 1:sims
-    data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin)
+    data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin, p)
     cen_data = data.data .- mean(data.data, dims=2)
 
-    correct_reg = comovement_reg(cen_data, dimvals, true_ranks, iters=100)
-    over_reg = comovement_reg(cen_data, dimvals, over_rank, iters=100)
-    under_reg = comovement_reg(cen_data, dimvals, under_rank, iters=100)
+    correct_reg = comovement_reg(cen_data, dimvals, true_ranks; iters=100, p)
+    over_reg = comovement_reg(cen_data, dimvals, over_rank; iters=100, p)
+    under_reg = comovement_reg(cen_data, dimvals, under_rank; iters=100, p)
 
     correct_gamma[:, i] = correct_reg.gamma_est[2:end]
     under_gamma[:, i] = under_reg.gamma_est[2:end]
