@@ -193,8 +193,8 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
             NewtonTrustRegion(;
                 initial_delta=1e4,      # initial radius
                 delta_hat=5e5,      # cap region 
-                eta=0.1,     # accept any step with ρₖ > 0.1
-                rho_lower=0.2,     # only shrink if ρₖ < 0.02
+                eta=0.2,     # accept any step with ρₖ > 0.1
+                rho_lower=0.25,     # only shrink if ρₖ < 0.02
                 rho_upper=0.5,      # grow if ρₖ > 0.5 (easier to expand when things look good)
             ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol),
@@ -228,10 +228,10 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
             #=LBFGS(),=#
             NewtonTrustRegion(
                 initial_delta=1e3,      # initial radius
-                delta_hat=5e4,      # cap region
-                eta=0.1,     # accept any step with ρₖ > 0.1 (higher => steps must show meaningful descent)
-                rho_lower=0.2,     # only shrink if ρₖ < 0.2 (delay shrinking)
-                rho_upper=0.5,      # grow if ρₖ > 0.7 (easier to expand when things look good)
+                delta_hat=5e5,      # cap region 
+                eta=0.2,     # accept any step with ρₖ > 0.1
+                rho_lower=0.25,     # only shrink if ρₖ < 0.02
+                rho_upper=0.5,      # grow if ρₖ > 0.5 (easier to expand when things look good)
             ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
