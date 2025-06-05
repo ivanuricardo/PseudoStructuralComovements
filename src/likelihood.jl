@@ -191,10 +191,10 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
             both_init,
             #=LBFGS(),=#
             NewtonTrustRegion(;
-                initial_delta=1e3,     # Smaller initial radius
+                initial_delta=1e4,     # Smaller initial radius
                 delta_hat=1e6,         # Larger max radius
-                eta=0.05,              # Accept more steps
-                rho_lower=0.1,        # Shrink only for very poor steps
+                eta=0.1,              # Accept more steps
+                rho_lower=0.2,        # Shrink only for very poor steps
                 rho_upper=0.4,         # Expand more aggressively
             ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol),
@@ -229,8 +229,8 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
             NewtonTrustRegion(;
                 initial_delta=1e3,     # Smaller initial radius
                 delta_hat=1e6,         # Larger max radius
-                eta=0.05,              # Accept more steps
-                rho_lower=0.1,        # Shrink only for very poor steps
+                eta=0.1,              # Accept more steps
+                rho_lower=0.2,        # Shrink only for very poor steps
                 rho_upper=0.4,         # Expand more aggressively
             ),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
