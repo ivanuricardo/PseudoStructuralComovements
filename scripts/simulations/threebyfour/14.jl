@@ -1,6 +1,6 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
-Random.seed!(20250511)
+Random.seed!(20250607)
 
 sims = 100
 dimvals = [3, 4]
