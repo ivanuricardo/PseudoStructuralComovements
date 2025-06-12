@@ -7,7 +7,7 @@ true_ranks = [2, 3]
 under_rank = [1, 3]
 over_rank = [3, 3]
 
-sims = 1000
+sims = 100
 burnin = 50
 obs = 100 + burnin
 
@@ -24,6 +24,10 @@ over_gamma = fill(NaN, 3, sims)
 correct_cov = fill(NaN, 3, sims)
 under_cov = fill(NaN, 3, sims)
 over_cov = fill(NaN, 3, sims)
+
+correct_width = fill(NaN, 3, sims)
+under_width = fill(NaN, 3, sims)
+over_width = fill(NaN, 3, sims)
 
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin)
@@ -48,6 +52,10 @@ over_cov = fill(NaN, 3, sims)
     over_upper = over_reg.gamma_est[2:end] + 1.96 .* over_reg.gamma_stderr
     over_lower = over_reg.gamma_est[2:end] - 1.96 .* over_reg.gamma_stderr
     over_cov[:, i] = over_lower .< gamma_true[2:end] .< over_upper
+
+    correct_width[:, i] = correct_upper .- correct_lower
+    under_width[:, i] = under_upper .- under_lower
+    over_width[:, i] = over_upper .- over_lower
 end
 
 save(datadir("coverage/gamma_cov_results100.jld2"), Dict(
@@ -59,4 +67,14 @@ save(datadir("coverage/gamma_cov_results100.jld2"), Dict(
     "over_cov" => over_cov,
     "gamma_true" => gamma_true
 ))
+
+
+using StatsPlots
+density(correct_width[2, :], label="correct delta")
+density!(under_width[2, :], label="underestimated delta")
+density!(over_width[2, :], label="overestimated delta")
+
+
+
+
 
