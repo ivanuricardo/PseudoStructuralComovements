@@ -31,7 +31,7 @@ A = generate_rrmar_coef(dimvals, ranks)
     medbic11[:, s] .= medicest.bic_sel[1:2]
 end
 
-save(datadir("fourbyfive/11_results.jld2"), Dict(
+save(datadir("threebyfour/11_results.jld2"), Dict(
     "smallaic" => smallaic11,
     "smallbic" => smallbic11,
     "medaic" => medaic11,

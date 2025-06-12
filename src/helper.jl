@@ -129,6 +129,30 @@ function nearest_posdef(A; minimumeigenvalue=1e-6)
     return Symmetric(newA)
 end
 
+function check_under_rank(ictable, compared_rank; first_dim=true)
+    if first_dim
+        selected_ic = ictable[:, ictable[4, :].==compared_rank]
+        aicvec = argmin(selected_ic[1, :])
+        aic_sel = selected_ic[4:end, aicvec]
+        bicvec = argmin(selected_ic[2, :])
+        bic_sel = Int.(selected_ic[4:end, bicvec])
+        hqcvec = argmin(selected_ic[3, :])
+        hqc_sel = Int.(selected_ic[4:end, hqcvec])
+
+        return (; aic_sel, bic_sel, hqc_sel, selected_ic)
+    end
+
+    selected_ic = ictable[:, ictable[5, :].==compared_rank]
+    aicvec = argmin(selected_ic[1, :])
+    aic_sel = selected_ic[4:end, aicvec]
+    bicvec = argmin(selected_ic[2, :])
+    bic_sel = Int.(selected_ic[4:end, bicvec])
+    hqcvec = argmin(selected_ic[3, :])
+    hqc_sel = Int.(selected_ic[4:end, hqcvec])
+
+    return (; aic_sel, bic_sel, hqc_sel, selected_ic)
+end
+
 function nearest_kron(A, SizeB, SizeC)
     m, n = size(A)
     m1, n1 = SizeB

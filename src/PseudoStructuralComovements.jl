@@ -33,6 +33,7 @@ export create_fourth_row
 
 include("./helper.jl")
 export insertk!
+export check_under_rank
 export removek!
 export cov_to_ll
 export make_companion
