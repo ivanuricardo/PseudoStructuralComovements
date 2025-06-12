@@ -41,8 +41,8 @@ A = generate_rrmar_coef(dimvals, ranks)
     under_smallbic11[:, s] .= small_clipped_icest.bic_sel[1:2]
 
     second_small_clipped_icest = check_under_rank(smallicest.ictable, 1.0)
-    second_smallaic11[:, s] .= small_clipped_icest.aic_sel[1:2]
-    second_smallbic11[:, s] .= small_clipped_icest.bic_sel[1:2]
+    second_smallaic11[:, s] .= second_small_clipped_icest.aic_sel[1:2]
+    second_smallbic11[:, s] .= second_small_clipped_icest.bic_sel[1:2]
 
     ############################################################################
 
@@ -55,8 +55,8 @@ A = generate_rrmar_coef(dimvals, ranks)
     under_medbic11[:, s] .= med_clipped_icest.bic_sel[1:2]
 
     second_med_clipped_icest = check_under_rank(medicest.ictable, 1.0)
-    second_medaic11[:, s] .= med_clipped_icest.aic_sel[1:2]
-    second_medbic11[:, s] .= med_clipped_icest.bic_sel[1:2]
+    second_medaic11[:, s] .= second_med_clipped_icest.aic_sel[1:2]
+    second_medbic11[:, s] .= second_med_clipped_icest.bic_sel[1:2]
 end
 
 save(datadir("threebyfour/31_results.jld2"), Dict(
@@ -107,10 +107,10 @@ println("________________________________________________")
 
 println("BONUS: Statistics if we 'accidentally' choose the incorrect rank")
 
-under_medaicstats = sim_stats(under_medaic11, ranks, sims)
-under_medbicstats = sim_stats(under_medbic11, ranks, sims)
-under_smallaicstats = sim_stats(under_smallaic11, ranks, sims)
-under_smallbicstats = sim_stats(under_smallbic11, ranks, sims)
+under_medaicstats = sim_stats(under_medaic11, [2, 1], sims)
+under_medbicstats = sim_stats(under_medbic11, [2, 1], sims)
+under_smallaicstats = sim_stats(under_smallaic11, [2, 1], sims)
+under_smallbicstats = sim_stats(under_smallbic11, [2, 1], sims)
 
 println("Average rank for small size (AIC): ", under_smallaicstats.avgval)
 println("Average rank for small size (BIC): ", under_smallbicstats.avgval)
@@ -132,10 +132,10 @@ println("Freq. Correct for medium size (BIC): ", under_medbicstats.freqcorrect)
 
 println("________________________________________________")
 
-second_medaicstats = sim_stats(second_medaic11, ranks, sims)
-second_medbicstats = sim_stats(second_medbic11, ranks, sims)
-second_smallaicstats = sim_stats(second_smallaic11, ranks, sims)
-second_smallbicstats = sim_stats(second_smallbic11, ranks, sims)
+second_medaicstats = sim_stats(second_medaic11, [1, 1], sims)
+second_medbicstats = sim_stats(second_medbic11, [1, 1], sims)
+second_smallaicstats = sim_stats(second_smallaic11, [1, 1], sims)
+second_smallbicstats = sim_stats(second_smallbic11, [1, 1], sims)
 
 println("Average rank for small size (AIC): ", second_smallaicstats.avgval)
 println("Average rank for small size (BIC): ", second_smallbicstats.avgval)
