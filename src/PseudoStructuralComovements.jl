@@ -2,7 +2,7 @@ module PseudoStructuralComovements
 
 using Reexport
 @reexport using LinearAlgebra, Statistics, Random, JLD2, StatsPlots
-@reexport using ProgressMeter
+@reexport using ProgressMeter, RCall
 
 using TensorToolbox
 using Optim
