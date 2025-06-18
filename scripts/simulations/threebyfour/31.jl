@@ -7,20 +7,20 @@ dimvals = [3, 4]
 ranks = [3, 1]
 snr = 0.7
 
-smallaic11 = fill(NaN, 2, sims)
-smallbic11 = fill(NaN, 2, sims)
-medaic11 = fill(NaN, 2, sims)
-medbic11 = fill(NaN, 2, sims)
+smallaic31 = fill(NaN, 2, sims)
+smallbic31 = fill(NaN, 2, sims)
+medaic31 = fill(NaN, 2, sims)
+medbic31 = fill(NaN, 2, sims)
 
-under_smallaic11 = fill(NaN, 2, sims)
-under_smallbic11 = fill(NaN, 2, sims)
-under_medaic11 = fill(NaN, 2, sims)
-under_medbic11 = fill(NaN, 2, sims)
+under_smallaic31 = fill(NaN, 2, sims)
+under_smallbic31 = fill(NaN, 2, sims)
+under_medaic31 = fill(NaN, 2, sims)
+under_medbic31 = fill(NaN, 2, sims)
 
-second_smallaic11 = fill(NaN, 2, sims)
-second_smallbic11 = fill(NaN, 2, sims)
-second_medaic11 = fill(NaN, 2, sims)
-second_medbic11 = fill(NaN, 2, sims)
+second_smallaic31 = fill(NaN, 2, sims)
+second_smallbic31 = fill(NaN, 2, sims)
+second_medaic31 = fill(NaN, 2, sims)
+second_medbic31 = fill(NaN, 2, sims)
 
 burnin = 100
 smallobs = 100
@@ -33,57 +33,57 @@ A = generate_rrmar_coef(dimvals, ranks)
     smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin)
 
     smallicest = rank_selection(smallmar.data, dimvals; iters=200)
-    smallaic11[:, s] .= smallicest.aic_sel[1:2]
-    smallbic11[:, s] .= smallicest.bic_sel[1:2]
+    smallaic31[:, s] .= smallicest.aic_sel[1:2]
+    smallbic31[:, s] .= smallicest.bic_sel[1:2]
 
     small_clipped_icest = check_under_rank(smallicest.ictable, 2.0)
-    under_smallaic11[:, s] .= small_clipped_icest.aic_sel[1:2]
-    under_smallbic11[:, s] .= small_clipped_icest.bic_sel[1:2]
+    under_smallaic31[:, s] .= small_clipped_icest.aic_sel[1:2]
+    under_smallbic31[:, s] .= small_clipped_icest.bic_sel[1:2]
 
     second_small_clipped_icest = check_under_rank(smallicest.ictable, 1.0)
-    second_smallaic11[:, s] .= second_small_clipped_icest.aic_sel[1:2]
-    second_smallbic11[:, s] .= second_small_clipped_icest.bic_sel[1:2]
+    second_smallaic31[:, s] .= second_small_clipped_icest.aic_sel[1:2]
+    second_smallbic31[:, s] .= second_small_clipped_icest.bic_sel[1:2]
 
     ############################################################################
 
     medicest = rank_selection(medmar.data, dimvals; iters=200)
-    medaic11[:, s] .= medicest.aic_sel[1:2]
-    medbic11[:, s] .= medicest.bic_sel[1:2]
+    medaic31[:, s] .= medicest.aic_sel[1:2]
+    medbic31[:, s] .= medicest.bic_sel[1:2]
 
     med_clipped_icest = check_under_rank(medicest.ictable, 2.0)
-    under_medaic11[:, s] .= med_clipped_icest.aic_sel[1:2]
-    under_medbic11[:, s] .= med_clipped_icest.bic_sel[1:2]
+    under_medaic31[:, s] .= med_clipped_icest.aic_sel[1:2]
+    under_medbic31[:, s] .= med_clipped_icest.bic_sel[1:2]
 
     second_med_clipped_icest = check_under_rank(medicest.ictable, 1.0)
-    second_medaic11[:, s] .= second_med_clipped_icest.aic_sel[1:2]
-    second_medbic11[:, s] .= second_med_clipped_icest.bic_sel[1:2]
+    second_medaic31[:, s] .= second_med_clipped_icest.aic_sel[1:2]
+    second_medbic31[:, s] .= second_med_clipped_icest.bic_sel[1:2]
 end
 
 save(datadir("threebyfour/31_results.jld2"), Dict(
-    "smallaic" => smallaic11,
-    "smallbic" => smallbic11,
-    "medaic" => medaic11,
-    "medbic" => medbic11
+    "smallaic" => smallaic31,
+    "smallbic" => smallbic31,
+    "medaic" => medaic31,
+    "medbic" => medbic31
 ))
 
 save(datadir("threebyfour/under_31_results.jld2"), Dict(
-    "under_smallaic" => under_smallaic11,
-    "under_smallbic" => under_smallbic11,
-    "under_medaic" => under_medaic11,
-    "under_medbic" => under_medbic11
+    "under_smallaic" => under_smallaic31,
+    "under_smallbic" => under_smallbic31,
+    "under_medaic" => under_medaic31,
+    "under_medbic" => under_medbic31
 ))
 
 save(datadir("threebyfour/second_31_results.jld2"), Dict(
-    "second_smallaic" => second_smallaic11,
-    "second_smallbic" => second_smallbic11,
-    "second_medaic" => second_medaic11,
-    "second_medbic" => second_medbic11
+    "second_smallaic" => second_smallaic31,
+    "second_smallbic" => second_smallbic31,
+    "second_medaic" => second_medaic31,
+    "second_medbic" => second_medbic31
 ))
 
-medaicstats = sim_stats(medaic11, ranks, sims)
-medbicstats = sim_stats(medbic11, ranks, sims)
-smallaicstats = sim_stats(smallaic11, ranks, sims)
-smallbicstats = sim_stats(smallbic11, ranks, sims)
+medaicstats = sim_stats(medaic31, ranks, sims)
+medbicstats = sim_stats(medbic31, ranks, sims)
+smallaicstats = sim_stats(smallaic31, ranks, sims)
+smallbicstats = sim_stats(smallbic31, ranks, sims)
 
 println("Average rank for small size (AIC): ", smallaicstats.avgval)
 println("Average rank for small size (BIC): ", smallbicstats.avgval)
@@ -107,10 +107,10 @@ println("________________________________________________")
 
 println("BONUS: Statistics if we 'accidentally' choose the incorrect rank")
 
-under_medaicstats = sim_stats(under_medaic11, [2, 1], sims)
-under_medbicstats = sim_stats(under_medbic11, [2, 1], sims)
-under_smallaicstats = sim_stats(under_smallaic11, [2, 1], sims)
-under_smallbicstats = sim_stats(under_smallbic11, [2, 1], sims)
+under_medaicstats = sim_stats(under_medaic31, [2, 1], sims)
+under_medbicstats = sim_stats(under_medbic31, [2, 1], sims)
+under_smallaicstats = sim_stats(under_smallaic31, [2, 1], sims)
+under_smallbicstats = sim_stats(under_smallbic31, [2, 1], sims)
 
 println("Average rank for small size (AIC): ", under_smallaicstats.avgval)
 println("Average rank for small size (BIC): ", under_smallbicstats.avgval)
@@ -132,10 +132,10 @@ println("Freq. Correct for medium size (BIC): ", under_medbicstats.freqcorrect)
 
 println("________________________________________________")
 
-second_medaicstats = sim_stats(second_medaic11, [1, 1], sims)
-second_medbicstats = sim_stats(second_medbic11, [1, 1], sims)
-second_smallaicstats = sim_stats(second_smallaic11, [1, 1], sims)
-second_smallbicstats = sim_stats(second_smallbic11, [1, 1], sims)
+second_medaicstats = sim_stats(second_medaic31, [1, 1], sims)
+second_medbicstats = sim_stats(second_medbic31, [1, 1], sims)
+second_smallaicstats = sim_stats(second_smallaic31, [1, 1], sims)
+second_smallbicstats = sim_stats(second_smallbic31, [1, 1], sims)
 
 println("Average rank for small size (AIC): ", second_smallaicstats.avgval)
 println("Average rank for small size (BIC): ", second_smallbicstats.avgval)

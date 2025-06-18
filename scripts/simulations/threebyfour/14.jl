@@ -7,10 +7,10 @@ dimvals = [3, 4]
 ranks = [1, 4]
 snr = 0.7
 
-smallaic11 = fill(NaN, 2, sims)
-smallbic11 = fill(NaN, 2, sims)
-medaic11 = fill(NaN, 2, sims)
-medbic11 = fill(NaN, 2, sims)
+smallaic14 = fill(NaN, 2, sims)
+smallbic14 = fill(NaN, 2, sims)
+medaic14 = fill(NaN, 2, sims)
+medbic14 = fill(NaN, 2, sims)
 
 burnin = 100
 smallobs = 100
@@ -23,25 +23,25 @@ A = generate_rrmar_coef(dimvals, ranks)
     smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin)
 
     smallicest = rank_selection(smallmar.data, dimvals; iters=200)
-    smallaic11[:, s] .= smallicest.aic_sel[1:2]
-    smallbic11[:, s] .= smallicest.bic_sel[1:2]
+    smallaic14[:, s] .= smallicest.aic_sel[1:2]
+    smallbic14[:, s] .= smallicest.bic_sel[1:2]
 
     medicest = rank_selection(medmar.data, dimvals; iters=200)
-    medaic11[:, s] .= medicest.aic_sel[1:2]
-    medbic11[:, s] .= medicest.bic_sel[1:2]
+    medaic14[:, s] .= medicest.aic_sel[1:2]
+    medbic14[:, s] .= medicest.bic_sel[1:2]
 end
 
 save(datadir("threebyfour/14_results.jld2"), Dict(
-    "smallaic" => smallaic11,
-    "smallbic" => smallbic11,
-    "medaic" => medaic11,
-    "medbic" => medbic11
+    "smallaic" => smallaic14,
+    "smallbic" => smallbic14,
+    "medaic" => medaic14,
+    "medbic" => medbic14
 ))
 
-medaicstats = sim_stats(medaic11, ranks, sims)
-medbicstats = sim_stats(medbic11, ranks, sims)
-smallaicstats = sim_stats(smallaic11, ranks, sims)
-smallbicstats = sim_stats(smallbic11, ranks, sims)
+medaicstats = sim_stats(medaic14, ranks, sims)
+medbicstats = sim_stats(medbic14, ranks, sims)
+smallaicstats = sim_stats(smallaic14, ranks, sims)
+smallbicstats = sim_stats(smallbic14, ranks, sims)
 
 println("Average rank for small size (AIC): ", smallaicstats.avgval)
 println("Average rank for small size (BIC): ", smallbicstats.avgval)

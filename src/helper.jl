@@ -129,7 +129,7 @@ function nearest_posdef(A; minimumeigenvalue=1e-6)
     return Symmetric(newA)
 end
 
-function check_under_rank(ictable, compared_rank; first_dim=true)
+function check_rank(ictable, compared_rank; first_dim=true)
     if first_dim
         selected_ic = ictable[:, ictable[4, :].==compared_rank]
         aicvec = argmin(selected_ic[1, :])
