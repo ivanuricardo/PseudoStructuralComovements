@@ -8,13 +8,13 @@ Random.seed!(20250607)
 
 sims = 100
 dimvals = [3, 4]
-ranks = [1, 1]
+ranks = [3, 1]
 snr = 0.7
 
-smallaic11 = fill(NaN, 2, sims)
-smallbic11 = fill(NaN, 2, sims)
-medaic11 = fill(NaN, 2, sims)
-medbic11 = fill(NaN, 2, sims)
+smallaic31 = fill(NaN, 2, sims)
+smallbic31 = fill(NaN, 2, sims)
+medaic31 = fill(NaN, 2, sims)
+medbic31 = fill(NaN, 2, sims)
 
 burnin = 100
 smallobs = 100
@@ -43,17 +43,17 @@ A = generate_rrmar_coef(dimvals, ranks)
     small_res = rcopy(small_res)
     med_res = rcopy(med_res)
 
-    smallbic11[:, s] .= small_res
-    medbic11[:, s] .= med_res
+    smallbic31[:, s] .= small_res
+    medbic31[:, s] .= med_res
 end
 
-save(datadir("threebyfour/11_bench_results.jld2"), Dict(
-    "smallbic" => smallbic11,
-    "medbic" => medbic11
+save(datadir("threebyfour/31_bench_results.jld2"), Dict(
+    "smallbic" => smallbic31,
+    "medbic" => medbic31
 ))
 
-medbicstats = sim_stats(medbic11, ranks, sims)
-smallbicstats = sim_stats(smallbic11, ranks, sims)
+medbicstats = sim_stats(medbic31, ranks, sims)
+smallbicstats = sim_stats(smallbic31, ranks, sims)
 
 println("Average rank for small size (BIC): ", smallbicstats.avgval)
 println("Std. Dev rank for small size (BIC): ", round.(smallbicstats.stdval, digits=4))

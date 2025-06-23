@@ -26,5 +26,3 @@ julia = "1.11.5"
 [weakdeps]
 RCall = "6f49c342-dc21-5d91-9882-a32aef131414"
 
-[extensions]
-RCallExt = "RCall"
