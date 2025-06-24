@@ -3,7 +3,7 @@ using DrWatson
 Random.seed!(20250607)
 
 sims = 100
-dimvals = [8, 3]
+dimvals = [6, 3]
 ranks = [1, 1]
 snr = 0.7
 
@@ -22,11 +22,11 @@ A = generate_rrmar_coef(dimvals, ranks)
     medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin)
     smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin)
 
-    smallicest = rank_selection(smallmar.data, dimvals; iters=200)
+    @time smallicest = rank_selection(smallmar.data, dimvals; iters=200)
     smallaic11[:, s] .= smallicest.aic_sel[1:2]
     smallbic11[:, s] .= smallicest.bic_sel[1:2]
 
-    medicest = rank_selection(medmar.data, dimvals; iters=200)
+    @time medicest = rank_selection(medmar.data, dimvals; iters=200)
     medaic11[:, s] .= medicest.aic_sel[1:2]
     medbic11[:, s] .= medicest.bic_sel[1:2]
 end

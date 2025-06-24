@@ -17,8 +17,8 @@ function rank_selection(data, dimvals; iters=500)
     ictable = fill(NaN, 5, prod(dimvals))
     rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2]))
 
-    for i = 1:prod(dimvals)
-    #=@showprogress Threads.@threads for i = 1:prod(dimvals)=#
+    #=for i = 1:prod(dimvals)=#
+    @showprogress for i = 1:prod(dimvals)
         selected_rank = collect(rank_grid[i])
         num_parameters = system_parameters(dimvals, selected_rank)
         reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters)
