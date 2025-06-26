@@ -31,11 +31,11 @@ A = generate_rrmar_coef(dimvals, ranks)
     smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin)
     small_bench_data = reshape(smallmar.data', (smallobs, dimvals[1], dimvals[2]))
 
-    smallicest = rank_selection(smallmar.data, dimvals; iters=200)
+    smallicest = rank_selection(smallmar.data, dimvals; iters=100)
     smallaic11[:, s] .= smallicest.aic_sel[1:2]
     smallbic11[:, s] .= smallicest.bic_sel[1:2]
 
-    medicest = rank_selection(medmar.data, dimvals; iters=200)
+    medicest = rank_selection(medmar.data, dimvals; iters=100)
     medaic11[:, s] .= medicest.aic_sel[1:2]
     medbic11[:, s] .= medicest.bic_sel[1:2]
 
@@ -43,17 +43,20 @@ A = generate_rrmar_coef(dimvals, ranks)
     d1 = $dimvals[1]
     d2 = $dimvals[2]
     small_data <- $small_bench_data
-    selected_rank <- r_rank_selection(small_data, d1, d2)
+    small_selected_rank <- r_rank_selection(small_data, d1, d2)
     """
+    @rget small_selected_rank
+
     med_bench = R"""
     d1 = $dimvals[1]
     d2 = $dimvals[2]
     med_data <- $med_bench_data
-    selected_rank <- r_rank_selection(med_data, d1, d2)
+    med_selected_rank <- r_rank_selection(med_data, d1, d2)
     """
+    @rget med_selected_rank
 
-    smallbic11_bench[:, s] .= rcopy(small_bench)
-    medbic11_bench[:, s] .= rcopy(med_bench)
+    smallbic11_bench[:, s] .= small_selected_rank[:selected_ranks]
+    medbic11_bench[:, s] .= med_selected_rank[:selected_ranks]
 end
 
 save(datadir("threebyfour/11_results.jld2"), Dict(
