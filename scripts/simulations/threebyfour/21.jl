@@ -6,7 +6,7 @@ source("r_helpers.R")
 """
 Random.seed!(20250607)
 
-sims = 3
+sims = 100
 dimvals = [3, 4]
 ranks = [2, 1]
 snr = 0.7
@@ -47,7 +47,7 @@ A = generate_rrmar_coef(dimvals, ranks)
     smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin)
     small_bench_data = reshape(smallmar.data', (smallobs, dimvals[1], dimvals[2]))
 
-    smallicest = rank_selection(smallmar.data, dimvals; iters=2)
+    smallicest = rank_selection(smallmar.data, dimvals; iters=100)
     smallaic21[:, s] .= smallicest.aic_sel[1:2]
     smallbic21[:, s] .= smallicest.bic_sel[1:2]
 
@@ -77,7 +77,7 @@ A = generate_rrmar_coef(dimvals, ranks)
 
     ############################################################################
 
-    medicest = rank_selection(medmar.data, dimvals; iters=2)
+    medicest = rank_selection(medmar.data, dimvals; iters=100)
     medaic21[:, s] .= medicest.aic_sel[1:2]
     medbic21[:, s] .= medicest.bic_sel[1:2]
 
@@ -102,8 +102,8 @@ A = generate_rrmar_coef(dimvals, ranks)
     over_medaic21[:, s] .= over_med_clipped_icest.aic_sel[1:2]
     over_medbic21[:, s] .= over_med_clipped_icest.bic_sel[1:2]
 
-    over_small_bench_table = check_rank(small_selected_rank[:ic_results]', 3.0)
-    over_smallbic21_bench[:, s] = over_small_bench_table.aic_sel
+    over_med_bench_table = check_rank(med_selected_rank[:ic_results]', 3.0)
+    over_medbic21_bench[:, s] = over_med_bench_table.aic_sel
 end
 
 save(datadir("threebyfour/21_results.jld2"), Dict(
