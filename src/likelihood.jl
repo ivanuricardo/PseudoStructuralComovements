@@ -189,14 +189,14 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
         res = optimize(
             td,
             both_init,
-            #=LBFGS(),=#
-            NewtonTrustRegion(;
-                initial_delta=1e4,     # Smaller initial radius
-                delta_hat=1e6,         # Larger max radius
-                eta=0.1,              # Accept more steps
-                rho_lower=0.2,        # Shrink only for very poor steps
-                rho_upper=0.4,         # Expand more aggressively
-            ),
+            LBFGS(),
+            #=NewtonTrustRegion(;=#
+            #=    initial_delta=1e4,     # Smaller initial radius=#
+            #=    delta_hat=1e6,         # Larger max radius=#
+            #=    eta=0.1,              # Accept more steps=#
+            #=    rho_lower=0.2,        # Shrink only for very poor steps=#
+            #=    rho_upper=0.4,         # Expand more aggressively=#
+            #=),=#
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol),
         )
         potential_starts[end, i] = res.minimum
@@ -225,20 +225,17 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
         res = optimize(
             td,
             chosen_start[:, i],
-            #=LBFGS(),=#
-            NewtonTrustRegion(;
-                initial_delta=1e3,     # Smaller initial radius
-                delta_hat=1e6,         # Larger max radius
-                eta=0.1,              # Accept more steps
-                rho_lower=0.2,        # Shrink only for very poor steps
-                rho_upper=0.4,         # Expand more aggressively
-            ),
+            LBFGS(),
+            #=NewtonTrustRegion(;=#
+            #=    initial_delta=1e3,     # Smaller initial radius=#
+            #=    delta_hat=1e6,         # Larger max radius=#
+            #=    eta=0.1,              # Accept more steps=#
+            #=    rho_lower=0.2,        # Shrink only for very poor steps=#
+            #=    rho_upper=0.4,         # Expand more aggressively=#
+            #=),=#
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
-        if res.g_residual < 1e-01
-            break
-        end
     end
     cut_results = potential_results[1:count]
     min_idx = argmin(res.minimum for res in cut_results)
@@ -248,7 +245,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=30, num_selected=15, p=1)
+function comovement_reg(data, dimvals, ranks; iters=100, tol=1e-05, num_starts=30, num_selected=5, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
