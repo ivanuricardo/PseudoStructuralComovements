@@ -189,7 +189,6 @@ function comovement_init(resp, pred, dimvals, ranks; iters=15, tol=1e-05, num_st
         res = optimize(
             td,
             both_init,
-            #=LBFGS(),=#
             LBFGS(),
             #=NewtonTrustRegion(;=#
             #=    initial_delta=1e4,     # Smaller initial radius=#
@@ -227,7 +226,6 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=100, tol=1e-05, num_st
             td,
             chosen_start[:, i],
             LBFGS(),
-            #=AcceleratedGradientDescent(),=#
             #=NewtonTrustRegion(;=#
             #=    initial_delta=1e3,     # Smaller initial radius=#
             #=    delta_hat=1e6,         # Larger max radius=#
