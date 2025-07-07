@@ -5,6 +5,7 @@ R"""
 source("r_helpers.R")
 """
 Random.seed!(20250607)
+const R_LOCK = ReentrantLock()
 
 sims = 100
 dimvals = [3, 4]
@@ -51,29 +52,28 @@ A = generate_rrmar_coef(dimvals, ranks)
     smallaic21[:, s] .= smallicest.aic_sel[1:2]
     smallbic21[:, s] .= smallicest.bic_sel[1:2]
 
-    small_bench = R"""
-    d1 = $dimvals[1]
-    d2 = $dimvals[2]
-    small_data <- $small_bench_data
-    small_selected_rank <- r_rank_selection(small_data, d1, d2)
-    """
-    @rget small_selected_rank
-
-    smallbic21_bench[:, s] .= small_selected_rank[:selected_ranks]
+    lock(R_LOCK) do
+        small_bench = R"""
+        d1 = $dimvals[1]
+        d2 = $dimvals[2]
+        small_data <- $small_bench_data
+        small_selected_rank <- r_rank_selection(small_data, d1, d2)
+        """
+        @rget small_selected_rank
+        smallbic21_bench[:, s] .= small_selected_rank[:selected_ranks]
+        under_small_bench_table = check_rank(small_selected_rank[:ic_results]', 1.0)
+        under_smallbic21_bench[:, s] = under_small_bench_table.aic_sel
+        over_small_bench_table = check_rank(small_selected_rank[:ic_results]', 3.0)
+        over_smallbic21_bench[:, s] = over_small_bench_table.aic_sel
+    end
 
     small_clipped_icest = check_rank(smallicest.ictable, 1.0)
     under_smallaic21[:, s] .= small_clipped_icest.aic_sel[1:2]
     under_smallbic21[:, s] .= small_clipped_icest.bic_sel[1:2]
 
-    under_small_bench_table = check_rank(small_selected_rank[:ic_results]', 1.0)
-    under_smallbic21_bench[:, s] = under_small_bench_table.aic_sel
-
     over_small_clipped_icest = check_rank(smallicest.ictable, 3.0)
     over_smallaic21[:, s] .= over_small_clipped_icest.aic_sel[1:2]
     over_smallbic21[:, s] .= over_small_clipped_icest.bic_sel[1:2]
-
-    over_small_bench_table = check_rank(small_selected_rank[:ic_results]', 3.0)
-    over_smallbic21_bench[:, s] = over_small_bench_table.aic_sel
 
     ############################################################################
 
@@ -81,29 +81,30 @@ A = generate_rrmar_coef(dimvals, ranks)
     medaic21[:, s] .= medicest.aic_sel[1:2]
     medbic21[:, s] .= medicest.bic_sel[1:2]
 
-    med_bench = R"""
-    d1 = $dimvals[1]
-    d2 = $dimvals[2]
-    med_data <- $med_bench_data
-    med_selected_rank <- r_rank_selection(med_data, d1, d2)
-    """
-    @rget med_selected_rank
-
-    medbic21_bench[:, s] .= med_selected_rank[:selected_ranks]
+    lock(R_LOCK) do
+        med_bench = R"""
+        d1 = $dimvals[1]
+        d2 = $dimvals[2]
+        med_data <- $med_bench_data
+        med_selected_rank <- r_rank_selection(med_data, d1, d2)
+        """
+        @rget med_selected_rank
+        medbic21_bench[:, s] .= med_selected_rank[:selected_ranks]
+        under_med_bench_table = check_rank(med_selected_rank[:ic_results]', 1.0)
+        under_medbic21_bench[:, s] = under_med_bench_table.aic_sel
+        over_med_bench_table = check_rank(med_selected_rank[:ic_results]', 3.0)
+        over_medbic21_bench[:, s] = over_med_bench_table.aic_sel
+    end
 
     med_clipped_icest = check_rank(medicest.ictable, 1.0)
     under_medaic21[:, s] .= med_clipped_icest.aic_sel[1:2]
     under_medbic21[:, s] .= med_clipped_icest.bic_sel[1:2]
 
-    under_med_bench_table = check_rank(med_selected_rank[:ic_results]', 1.0)
-    under_medbic21_bench[:, s] = under_med_bench_table.aic_sel
 
     over_med_clipped_icest = check_rank(medicest.ictable, 3.0)
     over_medaic21[:, s] .= over_med_clipped_icest.aic_sel[1:2]
     over_medbic21[:, s] .= over_med_clipped_icest.bic_sel[1:2]
 
-    over_med_bench_table = check_rank(med_selected_rank[:ic_results]', 3.0)
-    over_medbic21_bench[:, s] = over_med_bench_table.aic_sel
 end
 
 save(datadir("threebyfour/21_results.jld2"), Dict(
