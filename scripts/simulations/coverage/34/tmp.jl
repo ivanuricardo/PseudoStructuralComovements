@@ -29,9 +29,9 @@ over_gamma = fill(NaN, 1, sims)
     over_reg = comovement_reg(cen_data, dimvals, over_rank; iters=1000)
     under_reg = comovement_reg(cen_data, dimvals, under_rank; iters=1000)
 
-    correct_gamma[:, i] = correct_reg.count
-    under_gamma[:, i] = under_reg.count
-    over_gamma[:, i] = over_reg.count
+    correct_gamma[:, i] .= correct_reg.count
+    under_gamma[:, i] .= under_reg.count
+    over_gamma[:, i] .= over_reg.count
 
 end
 

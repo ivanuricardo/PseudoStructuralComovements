@@ -236,7 +236,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-05, num_s
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
-        if res.g_residual < 1e01
+        if res.g_residual < 1.0
             break
         end
     end
