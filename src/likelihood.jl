@@ -236,13 +236,16 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-05, num_s
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
+        if res.g_residual < 1e01
+            break
+        end
     end
     cut_results = potential_results[1:count]
     min_idx = argmin(res.minimum for res in cut_results)
     res = potential_results[min_idx]
     println(res.iterations)
 
-    return (; res, td)
+    return (; res, td, count)
 end
 
 function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-05, num_starts=40, num_selected=5, p=1)
@@ -259,7 +262,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-05, num_starts=
     pred = data[:, 1:(end-1)]
     resp = perm_resp .- mean(perm_resp, dims=2)
 
-    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+    res, td, count = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
 
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
@@ -300,6 +303,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-05, num_starts=
         hess_est,
         omega,
         pi_mat,
+        count,
     )
 end
 
