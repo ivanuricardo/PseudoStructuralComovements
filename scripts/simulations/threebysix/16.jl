@@ -5,19 +5,20 @@ R"""
 source("r_helpers.R")
 """
 Random.seed!(20250607)
+const R_LOCK = ReentrantLock()
 
 sims = 100
-dimvals = [6, 3]
-ranks = [6, 3]
+dimvals = [3, 6]
+ranks = [1, 6]
 snr = 0.7
 
-smallaic63 = fill(NaN, 2, sims)
-smallbic63 = fill(NaN, 2, sims)
-medaic63 = fill(NaN, 2, sims)
-medbic63 = fill(NaN, 2, sims)
+smallaic16 = fill(NaN, 2, sims)
+smallbic16 = fill(NaN, 2, sims)
+medaic16 = fill(NaN, 2, sims)
+medbic16 = fill(NaN, 2, sims)
 
-smallbic63_bench = fill(NaN, 2, sims)
-medbic63_bench = fill(NaN, 2, sims)
+smallbic16_bench = fill(NaN, 2, sims)
+medbic16_bench = fill(NaN, 2, sims)
 
 burnin = 100
 smallobs = 100
@@ -31,46 +32,52 @@ A = generate_rrmar_coef(dimvals, ranks)
     smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin)
     small_bench_data = reshape(smallmar.data', (smallobs, dimvals[1], dimvals[2]))
 
-    smallicest = rank_selection(smallmar.data, dimvals; iters=200)
-    smallaic63[:, s] .= smallicest.aic_sel[1:2]
-    smallbic63[:, s] .= smallicest.bic_sel[1:2]
+    smallicest = rank_selection(smallmar.data, dimvals; iters=1000)
+    smallaic16[:, s] .= smallicest.aic_sel[1:2]
+    smallbic16[:, s] .= smallicest.bic_sel[1:2]
 
-    medicest = rank_selection(medmar.data, dimvals; iters=200)
-    medaic63[:, s] .= medicest.aic_sel[1:2]
-    medbic63[:, s] .= medicest.bic_sel[1:2]
+    medicest = rank_selection(medmar.data, dimvals; iters=1000)
+    medaic16[:, s] .= medicest.aic_sel[1:2]
+    medbic16[:, s] .= medicest.bic_sel[1:2]
 
-    small_bench = R"""
-    d1 = $dimvals[1]
-    d2 = $dimvals[2]
-    small_data <- $small_bench_data
-    selected_rank <- r_rank_selection(small_data, d1, d2)
-    """
-    med_bench = R"""
-    d1 = $dimvals[1]
-    d2 = $dimvals[2]
-    med_data <- $med_bench_data
-    selected_rank <- r_rank_selection(med_data, d1, d2)
-    """
+    lock(R_LOCK) do
+        small_bench = R"""
+        d1 = $dimvals[1]
+        d2 = $dimvals[2]
+        small_data <- $small_bench_data
+        small_selected_rank <- r_rank_selection(small_data, d1, d2)
+        """
+        @rget small_selected_rank
+        smallbic16_bench[:, s] .= small_selected_rank[:selected_ranks]
+    end
 
-    smallbic63_bench[:, s] .= rcopy(small_bench)
-    medbic63_bench[:, s] .= rcopy(med_bench)
+    lock(R_LOCK) do
+        med_bench = R"""
+        d1 = $dimvals[1]
+        d2 = $dimvals[2]
+        med_data <- $med_bench_data
+        med_selected_rank <- r_rank_selection(med_data, d1, d2)
+        """
+        @rget med_selected_rank
+        medbic16_bench[:, s] .= med_selected_rank[:selected_ranks]
+    end
 end
 
-save(datadir("sixbythree/63_results.jld2"), Dict(
-    "smallaic" => smallaic63,
-    "smallbic" => smallbic63,
-    "medaic" => medaic63,
-    "medbic" => medbic63,
-    "smallbic_bench" => smallbic63_bench,
-    "medbic_bench" => medbic63_bench,
+save(datadir("threebysix/16_results.jld2"), Dict(
+    "smallaic" => smallaic16,
+    "smallbic" => smallbic16,
+    "medaic" => medaic16,
+    "medbic" => medbic16,
+    "smallbic_bench" => smallbic16_bench,
+    "medbic_bench" => medbic16_bench,
 ))
 
-medaicstats = sim_stats(medaic63, ranks, sims)
-medbicstats = sim_stats(medbic63, ranks, sims)
-smallaicstats = sim_stats(smallaic63, ranks, sims)
-smallbicstats = sim_stats(smallbic63, ranks, sims)
-smallbicstats_bench = sim_stats(smallbic63_bench, ranks, sims)
-medbicstats_bench = sim_stats(medbic63_bench, ranks, sims)
+medaicstats = sim_stats(medaic16, ranks, sims)
+medbicstats = sim_stats(medbic16, ranks, sims)
+smallaicstats = sim_stats(smallaic16, ranks, sims)
+smallbicstats = sim_stats(smallbic16, ranks, sims)
+smallbicstats_bench = sim_stats(smallbic16_bench, ranks, sims)
+medbicstats_bench = sim_stats(medbic16_bench, ranks, sims)
 
 println("Average rank for small size (AIC): ", smallaicstats.avgval)
 println("Average rank for small size (BIC): ", smallbicstats.avgval)

@@ -470,5 +470,8 @@ r_rank_selection <- function(data, d1, d2) {
     best_idx <- which.min(ic_results[, 1])
     best_r1 <- rank_grid[best_idx, 1]
     best_r2 <- rank_grid[best_idx, 2]
-    return(c(best_r1, best_r2))
+    return(list(
+        selected_ranks = c(best_r1, best_r2),
+        ic_results = ic_results
+    ))
 }
