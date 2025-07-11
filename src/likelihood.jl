@@ -1,37 +1,42 @@
 
 function unpack_params(theta, dimvals, ranks; p=1)
-    pdims = prod(dimvals)
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
     num_u3 = p * (ranks[1] * dimvals[1] - 1)
     num_u4 = p * (ranks[2] * dimvals[2])
-    num_sigma = Int(pdims * (pdims + 1) / 2)
+    num_ll1 = Int(dimvals[1] * (dimvals[1] + 1) / 2) - 1
+    num_ll2 = Int(dimvals[2] * (dimvals[2] + 1) / 2)
 
-    @assert length(theta) == (num_delta + num_gamma + num_u3 + num_u4 + num_sigma) "Parameter vector has wrong length!"
+    @assert length(theta) == (num_delta + num_gamma + num_u3 + num_u4 + num_ll1 + num_ll2) "Parameter vector has wrong length!"
 
     idx_gamma = num_delta + num_gamma
     idx_u3 = num_delta + num_gamma + num_u3
     idx_u4 = num_delta + num_gamma + num_u3 + num_u4
+    idx_ll1 = num_delta + num_gamma + num_u3 + num_u4 + num_ll1
 
     delta_vec = theta[1:num_delta]
     gamma_vec = theta[(num_delta+1):idx_gamma]
     u3_vec = theta[(idx_gamma+1):idx_u3]
     u4_vec = theta[(idx_u3+1):idx_u4]
-    ll_vec = theta[(idx_u4+1):end]
+    ll1_vec = theta[(idx_u4+1):idx_ll1]
+    ll2_vec = theta[(idx_ll1+1):end]
 
     delta_star = reshape(delta_vec, ranks[1], dimvals[1] - ranks[1])
     delta = vcat(I, delta_star)
 
     gamma_star = reshape(gamma_vec, ranks[2], dimvals[2] - ranks[2])
     gamma = vcat(I, gamma_star)
-    ll = vec_to_ll(ll_vec, pdims)
+
+    insert!(ll1_vec, 1, 1)
+    ll1 = vec_to_ll(ll1_vec, dimvals[1])
+    ll2 = vec_to_ll(ll2_vec, dimvals[2])
 
     if p == 1
         insert!(u3_vec, 1, 1)
         u3 = reshape(u3_vec, dimvals[1], ranks[1])
         u4 = reshape(u4_vec, dimvals[2], ranks[2])
 
-        return (; delta, gamma, u3, u4, ll)
+        return (; delta, gamma, u3, u4, ll1, ll2)
     end
 
     t_u3 = eltype(u3_vec)
@@ -52,16 +57,20 @@ function unpack_params(theta, dimvals, ranks; p=1)
         u3[i1:i2, :] .= reshape(u3_vec[k1:k2], dimvals[1], ranks[1])
         u4[j1:j2, :] .= reshape(u4_vec[l1:l2], dimvals[2], ranks[2])
     end
-    return (; delta, gamma, u3, u4, ll)
+    return (; delta, gamma, u3, u4, ll1, ll2)
 
 end
 
-function pack_params(delta_star, gamma_star, u3, u4, ll; p=1)
+function pack_params(delta_star, gamma_star, u3, u4, ll1, ll2; p=1)
     n1, n2 = size(u3)
     true_n1 = n1 ÷ p
     vec_u3 = vecb(u3, true_n1)
     removek!(vec_u3, true_n1 * n2 - 1)
-    return vcat(vec(delta_star), vec(gamma_star), vec_u3, vec(u4), vech(ll))
+    vec_ll1 = vech(ll1)
+    removek!(vec_ll1, 1)
+    vec_ll2 = vech(ll2)
+
+    return vcat(vec(delta_star), vec(gamma_star), vec_u3, vec(u4), vec_ll1, vec_ll2)
 end
 
 function rand_init(dimvals, ranks; p=1)
@@ -74,7 +83,7 @@ function rand_init(dimvals, ranks; p=1)
     gamma = coef.gamma
     delta_init = delta[(n1_r1+1):end, :]
     gamma_init = gamma[(n2_r2+1):end, :]
-    return pack_params(delta_init, gamma_init, coef.u3, coef.u4, I(prod(dimvals)); p)
+    return pack_params(delta_init, gamma_init, coef.u3, coef.u4, I(dimvals[1]), I(dimvals[2]); p)
 
 end
 
@@ -124,7 +133,7 @@ function init_alg(resp, pred, dimvals, ranks; p=1)
         u4 = vcat(u4, u4_bot)
     end
 
-    return pack_params(delta_star, gamma_star, u3, u4, I(prod(dimvals)); p)
+    return pack_params(delta_star, gamma_star, u3, u4, I(dimvals[1]), I(dimvals[2]); p)
 
 end
 
@@ -132,7 +141,12 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
 
-    delta_rot, gamma_rot, u3, u4, ll = unpack_params(theta, dimvals, ranks; p)
+    delta_rot, gamma_rot, u3, u4, ll1, ll2 = unpack_params(theta, dimvals, ranks; p)
+    sigma1 = ll1 * ll1'
+    sigma2 = ll2 * ll2'
+    sigma = kron(sigma2, sigma1)
+    ll = kron(ll2, ll1)
+
     delta_star = delta_rot[(N1_r1+1):end, :]
     gamma_star = gamma_rot[(N2_r2+1):end, :]
 
@@ -148,12 +162,10 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
         sparse_omega = sparse(omega)
         sparse_pi = sparse(pi_mat)
     end
-    det_term = det(0.5 .* (ll * ll' + ll * ll'))
-    if det_term <= 0.0
-        return 1e10
-    end
+    # no need for omegas because det = 1
+    logdet_term1 = dimvals[2] * logdet(sigma1)
+    logdet_term2 = dimvals[1] * logdet(sigma2)
 
-    logdet_term = log(det_term)
     X = sparse_omega * ll
     precision_matrix = inv(X') * inv(X)
     sparse_precision = sparse(precision_matrix)
@@ -167,7 +179,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
         sse += dot(resid, sparse_precision * resid)
     end
 
-    return 0.5 * ((obs - 1) * logdet_term + sse)
+    return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
 function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_starts=30, num_selected=5, p=1)
@@ -180,7 +192,6 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
         if i == 1
             both_init = copy(some_init)
         else
-            #=both_init = copy(some_init) .+ rand_init(dimvals, ranks)=#
             both_init = rand_init(dimvals, ranks; p)
         end
         potential_starts[1:(end-1), i] = both_init
@@ -190,13 +201,6 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-05, num_sta
             td,
             both_init,
             BFGS(),
-            #=NewtonTrustRegion(;=#
-            #=    initial_delta=1e4,     # Smaller initial radius=#
-            #=    delta_hat=1e6,         # Larger max radius=#
-            #=    eta=0.1,              # Accept more steps=#
-            #=    rho_lower=0.2,        # Shrink only for very poor steps=#
-            #=    rho_upper=0.4,         # Expand more aggressively=#
-            #=),=#
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol),
         )
         potential_starts[end, i] = res.minimum
@@ -226,13 +230,6 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-05, num_s
             td,
             chosen_start[:, i],
             BFGS(),
-            #=NewtonTrustRegion(;=#
-            #=    initial_delta=1e3,     # Smaller initial radius=#
-            #=    delta_hat=1e6,         # Larger max radius=#
-            #=    eta=0.1,              # Accept more steps=#
-            #=    rho_lower=0.2,        # Shrink only for very poor steps=#
-            #=    rho_upper=0.4,         # Expand more aggressively=#
-            #=),=#
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
@@ -276,7 +273,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-05, num_starts=
     end
     theta_est = Optim.minimizer(res)
 
-    delta_est, gamma_est, u3_est, u4_est, sigma_est =
+    delta_est, gamma_est, u3_est, u4_est, ll1_est, ll2_est =
         unpack_params(theta_est, dimvals, ranks; p)
 
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
@@ -290,6 +287,8 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-05, num_starts=
 
     omega = create_omega(delta_star, gamma_star, dimvals, ranks)
     pi_mat = create_pi(u3_est, u4_est, dimvals, ranks; p)
+    sigma1_est = ll1_est * ll1_est'
+    sigma2_est = ll2_est * ll2_est'
 
     return (;
         res,
@@ -299,7 +298,8 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-05, num_starts=
         gamma_stderr,
         u3_est,
         u4_est,
-        sigma_est,
+        sigma1_est,
+        sigma2_est,
         hess_est,
         omega,
         pi_mat,
