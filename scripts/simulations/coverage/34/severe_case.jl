@@ -4,11 +4,11 @@ Random.seed!(20250607)
 
 dimvals = [3, 4]
 true_rank = [2, 4]
-under_rank = [2, 2]
+under_rank = [2, 1]
 
 sims = 1000
 burnin = 50
-obs = 250 + burnin
+obs = 700 + burnin  # try increasing the sample size?
 
 coef = generate_rrmar_coef(dimvals, true_rank)
 delta_true = coef.delta
@@ -41,6 +41,12 @@ under_cov = fill(NaN, 2, sims)
     under_cov[:, i] = under_lower .< delta_true[2:end] .< under_upper
 
 end
+
+density(correct_delta[2, :], label="correct estimated rank")
+density!(under_delta[2, :], label="underestimated rank")
+vline!([mean(correct_delta[2, :])], label="correct estimated mean")
+vline!([mean(under_delta[2, :])], label="underestimated mean")
+vline!([delta_true[3]], label="true delta")
 
 save(datadir("coverage/severe_case.jld2"), Dict(
     "correct_delta" => correct_delta,

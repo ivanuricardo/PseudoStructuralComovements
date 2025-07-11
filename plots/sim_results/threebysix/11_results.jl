@@ -1,9 +1,9 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
 
-ranks = [3, 4]
+ranks = [1, 1]
 sims = 100
-sim_results = load(datadir("threebyfour/34_results.jld2"))
+sim_results = load(datadir("threebysix/11_results.jld2"))
 smallaic = sim_results["smallaic"]
 smallbic = sim_results["smallbic"]
 smallbic_bench = sim_results["smallbic_bench"]
@@ -41,4 +41,3 @@ println("Std. Dev rank for medium size (bench BIC): ", round.(medbicstats_bench.
 println("Freq. Correct for medium size (AIC): ", medaicstats.freqcorrect)
 println("Freq. Correct for medium size (BIC): ", medbicstats.freqcorrect)
 println("Freq. Correct for medium size (bench BIC): ", medbicstats_bench.freqcorrect)
-

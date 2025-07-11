@@ -41,4 +41,3 @@ println("Std. Dev rank for medium size (bench BIC): ", round.(medbicstats_bench.
 println("Freq. Correct for medium size (AIC): ", medaicstats.freqcorrect)
 println("Freq. Correct for medium size (BIC): ", medbicstats.freqcorrect)
 println("Freq. Correct for medium size (bench BIC): ", medbicstats_bench.freqcorrect)
-
