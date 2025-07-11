@@ -43,9 +43,9 @@ medobs = 250
 A = generate_rrmar_coef(dimvals, ranks)
 
 @showprogress Threads.@threads for s = 1:sims
-    medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin)
+    medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin, matrix_err=true)
     med_bench_data = reshape(medmar.data', (medobs, dimvals[1], dimvals[2]))
-    smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin)
+    smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin, matrix_err=true)
     small_bench_data = reshape(smallmar.data', (smallobs, dimvals[1], dimvals[2]))
 
     smallicest = rank_selection(smallmar.data, dimvals; iters=1000)
