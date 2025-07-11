@@ -168,8 +168,8 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     end
 
     # no need for omegas because det = 1
-    logdet_term1 = dimvals[2] * log(sigma1)
-    logdet_term2 = dimvals[1] * log(sigma2)
+    logdet_term1 = dimvals[2] * log(det_term1)
+    logdet_term2 = dimvals[1] * log(det_term2)
 
     X = sparse_omega * ll
     precision_matrix = inv(X') * inv(X)
