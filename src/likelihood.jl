@@ -144,7 +144,6 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     delta_rot, gamma_rot, u3, u4, ll1, ll2 = unpack_params(theta, dimvals, ranks; p)
     sigma1 = ll1 * ll1'
     sigma2 = ll2 * ll2'
-    sigma = kron(sigma2, sigma1)
     ll = kron(ll2, ll1)
 
     delta_star = delta_rot[(N1_r1+1):end, :]
@@ -162,9 +161,15 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
         sparse_omega = sparse(omega)
         sparse_pi = sparse(pi_mat)
     end
+    det_term1 = det(sigma1)
+    det_term2 = det(sigma2)
+    if (det_term1 <= 0.0) || (det_term2 <= 0.0)
+        return 1e10
+    end
+
     # no need for omegas because det = 1
-    logdet_term1 = dimvals[2] * logdet(sigma1)
-    logdet_term2 = dimvals[1] * logdet(sigma2)
+    logdet_term1 = dimvals[2] * log(sigma1)
+    logdet_term2 = dimvals[1] * log(sigma2)
 
     X = sparse_omega * ll
     precision_matrix = inv(X') * inv(X)
