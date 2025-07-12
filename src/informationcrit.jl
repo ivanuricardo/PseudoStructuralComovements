@@ -3,7 +3,10 @@ function system_parameters(dimvals, ranks)
     first_term = ranks[1] * (dimvals[1] - ranks[1])
     second_term = ranks[2] * (dimvals[2] - ranks[2])
     third_term = ranks[1] * dimvals[1] + ranks[2] * dimvals[2]
-    return first_term + second_term + third_term - 1
+    num_ll1 = Int(dimvals[1] * (dimvals[1] + 1) / 2) - 1
+    num_ll2 = Int(dimvals[2] * (dimvals[2] + 1) / 2)
+
+    return first_term + second_term + num_ll1 + num_ll2 + third_term - 1
 end
 
 aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
@@ -17,8 +20,8 @@ function rank_selection(data, dimvals; iters=500)
     ictable = fill(NaN, 5, prod(dimvals))
     rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2]))
 
-    for i = 1:prod(dimvals)
-    #=@showprogress for i = 1:prod(dimvals)=#
+    #=for i = 1:prod(dimvals)=#
+    @showprogress for i = 1:prod(dimvals)
         selected_rank = collect(rank_grid[i])
         num_parameters = system_parameters(dimvals, selected_rank)
         reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters)
