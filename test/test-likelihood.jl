@@ -5,8 +5,8 @@
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
     p = 1
-    theta = randn(92)
-    delta, gamma, u3, u4, ll = unpack_params(theta, dimvals, ranks; p)
+    theta = randn(29)
+    delta, gamma, u3, u4, ll1, ll2 = unpack_params(theta, dimvals, ranks; p)
 
     @test size(u3) == (dimvals[1], ranks[1])
     @test size(u4) == (dimvals[2], ranks[2])
@@ -16,22 +16,22 @@
     # Checking if repack gives me back theta
     delta_star = delta[(N1_r1+1):end, :]
     gamma_star = gamma[(N2_r2+1):end, :]
-    theta_reconstructed = pack_params(delta_star, gamma_star, u3, u4, ll)
+    theta_reconstructed = pack_params(delta_star, gamma_star, u3, u4, ll1, ll2)
     @test norm(theta_reconstructed - theta) ≈ 0
 
 
     # Testing with 2 lags
     p = 2
-    theta = randn(101)
+    theta = randn(38)
 
-    delta, gamma, u3, u4, ll = unpack_params(theta, dimvals, ranks; p)
+    delta, gamma, u3, u4, ll1, ll2 = unpack_params(theta, dimvals, ranks; p)
     @test size(u3) == (p * dimvals[1], ranks[1])
     @test size(u4) == (p * dimvals[2], ranks[2])
 
     # repacking again should give me the same
     delta_star = delta[(N1_r1+1):end, :]
     gamma_star = gamma[(N2_r2+1):end, :]
-    theta_reconstructed = pack_params(delta_star, gamma_star, u3, u4, ll; p)
+    theta_reconstructed = pack_params(delta_star, gamma_star, u3, u4, ll1, ll2; p)
     @test norm(theta_reconstructed - theta) ≈ 0
 end
 
