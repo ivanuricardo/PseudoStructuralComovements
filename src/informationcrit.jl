@@ -11,6 +11,13 @@ end
 
 aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
 bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * log(obs))
+#=function bic(ll, obs::Int, dimvals, ranks)=#
+#=    r1, r2 = ranks[1], ranks[2]=#
+#=    d1, d2 = dimvals[1], dimvals[2]=#
+#=    penalty = log(obs * d2) * r1 * (2 * d1 - r1) + log(obs * d1) * r2 * (2 * d2 - r2)=#
+#=    penalty /= (obs * d1 * d2)=#
+#=    return -2 * ll + penalty=#
+#=end=#
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
 
 function rank_selection(data, dimvals; iters=500)
@@ -20,13 +27,14 @@ function rank_selection(data, dimvals; iters=500)
     ictable = fill(NaN, 5, prod(dimvals))
     rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2]))
 
-    #=for i = 1:prod(dimvals)=#
-    @showprogress for i = 1:prod(dimvals)
+    for i = 1:prod(dimvals)
+        #=@showprogress Threads.@threads for i = 1:prod(dimvals)=#
         selected_rank = collect(rank_grid[i])
         num_parameters = system_parameters(dimvals, selected_rank)
         reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters)
         ll = -reg.res.minimum
         ictable[1, i] = aic(ll, num_parameters)
+        #=ictable[2, i] = bic(ll, obs, dimvals, selected_rank)=#
         ictable[2, i] = bic(ll, num_parameters, obs)
         ictable[3, i] = hqc(ll, num_parameters, obs)
         ictable[4, i] = selected_rank[1]

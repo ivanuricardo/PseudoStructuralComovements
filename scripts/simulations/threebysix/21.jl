@@ -100,7 +100,6 @@ A = generate_rrmar_coef(dimvals, ranks)
     under_medaic21[:, s] .= med_clipped_icest.aic_sel[1:2]
     under_medbic21[:, s] .= med_clipped_icest.bic_sel[1:2]
 
-
     over_med_clipped_icest = check_rank(medicest.ictable, 3.0)
     over_medaic21[:, s] .= over_med_clipped_icest.aic_sel[1:2]
     over_medbic21[:, s] .= over_med_clipped_icest.bic_sel[1:2]
