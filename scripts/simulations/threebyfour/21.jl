@@ -4,7 +4,8 @@ using RCall
 R"""
 source("r_helpers.R")
 """
-Random.seed!(20250607)
+Random.seed!(20250711)
+#=Random.seed!(20250607)=#
 const R_LOCK = ReentrantLock()
 
 sims = 100
@@ -51,6 +52,23 @@ A = generate_rrmar_coef(dimvals, ranks)
     smallicest = rank_selection(smallmar.data, dimvals; iters=1000)
     smallaic21[:, s] .= smallicest.aic_sel[1:2]
     smallbic21[:, s] .= smallicest.bic_sel[1:2]
+
+
+
+
+
+
+    correct_reg = comovement_reg(medmar.data, dimvals, [1, 1]; iters=1000)
+    under_reg = comovement_reg(medmar.data, dimvals, [1, 2]; iters=1000)
+
+    new = comovement_reg(medmar.data, dimvals, [2, 1]; iters=1000)
+
+
+
+
+
+
+
 
     lock(R_LOCK) do
         small_bench = R"""
