@@ -187,7 +187,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-07, num_starts=40, num_selected=5, p=1)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-06, num_starts=50, num_selected=15, p=1)
     some_init = init_alg(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -218,7 +218,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-07, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_starts=40, num_selected=5, p=1)
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-06, num_starts=50, num_selected=15, p=1)
 
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     td = nothing
@@ -238,7 +238,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
-        if res.g_residual < 1.0
+        if res.g_residual < 1e-01
             break
         end
     end
@@ -246,11 +246,12 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
     min_idx = argmin(res.minimum for res in cut_results)
     res = potential_results[min_idx]
     println(res.iterations)
+    println(min_idx)
 
     return (; res, td, count)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=40, num_selected=5, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-06, num_starts=50, num_selected=15, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
