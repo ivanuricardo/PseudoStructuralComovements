@@ -238,15 +238,13 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
         )
         potential_results[i] = res
-        if res.g_residual < 1e-01
-            break
-        end
+        #=if res.g_residual < 1e-01=#
+        #=    break=#
+        #=end=#
     end
     cut_results = potential_results[1:count]
     min_idx = argmin(res.minimum for res in cut_results)
     res = potential_results[min_idx]
-    println(res.iterations)
-    println(min_idx)
 
     return (; res, td, count)
 end
