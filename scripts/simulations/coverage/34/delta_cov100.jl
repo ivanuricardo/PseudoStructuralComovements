@@ -2,7 +2,7 @@ using DrWatson
 @quickactivate :PseudoStructuralComovements
 Random.seed!(20250708)
 
-dimvals = [3, 6]
+dimvals = [3, 4]
 true_rank = [2, 2]
 under_rank = [2, 1]
 over_rank = [2, 3]
@@ -50,7 +50,7 @@ over_cov = fill(NaN, 2, sims)
     over_cov[:, i] = over_lower .< delta_true[2:end] .< over_upper
 end
 
-save(datadir("coverage/delta_cov_results100.jld2"), Dict(
+save(datadir("coverage/34/delta_cov_results100.jld2"), Dict(
     "correct_delta" => correct_delta,
     "under_delta" => under_delta,
     "over_delta" => over_delta,

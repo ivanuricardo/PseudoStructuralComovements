@@ -50,7 +50,7 @@ over_cov = fill(NaN, 3, sims)
     over_cov[:, i] = over_lower .< gamma_true[2:end] .< over_upper
 end
 
-save(datadir("coverage/gamma_cov_results250.jld2"), Dict(
+save(datadir("coverage/34/gamma_cov_results250.jld2"), Dict(
     "correct_gamma" => correct_gamma,
     "under_gamma" => under_gamma,
     "over_gamma" => over_gamma,
