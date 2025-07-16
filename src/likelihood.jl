@@ -218,7 +218,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=100, num_selected=15, p=1, grad_tol=1e-02)
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=100, num_selected=15, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -238,7 +238,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
         )
         push!(potential_results, res)
 
-        if res.g_residual < grad_tol
+        if res.g_residual < 1e-02
             break
         end
     end
@@ -252,8 +252,8 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
         min_idx = argmin([r.minimum for r in valid_results])
         res = valid_results[min_idx]
     else
-        # Fallback to result with smallest gradient norm
-        min_grad_idx = argmin([r.g_residual for r in potential_results])
+        # Fallback to result with smallest objective value
+        min_grad_idx = argmin([r.minimum for r in potential_results])
         res = potential_results[min_grad_idx]
         @warn "No solution with gradient norm < $grad_tol. Selected best gradient: $(res.g_residual)"
     end
