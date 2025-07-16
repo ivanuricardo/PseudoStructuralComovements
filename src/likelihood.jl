@@ -187,7 +187,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-07, num_starts=100, num_selected=15, p=1)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=100, num_selected=15, p=1)
     some_init = init_alg(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -218,15 +218,14 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-07, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_starts=100, num_selected=15, p=1)
-
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=100, num_selected=15, p=1, grad_tol=1e-02)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
+    chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
+    potential_results = []
     td = nothing
     res = nothing
 
-    chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-02, num_starts, num_selected, p)
-    potential_results = Vector{Any}(undef, size(chosen_start, 2))
-
+    # Run all optimizations and collect results
     count = 0
     for i in 1:size(chosen_start, 2)
         count += 1
@@ -235,21 +234,34 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
             td,
             chosen_start[:, i],
             BFGS(),
-            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=1e-01),
+            Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=grad_tol),
         )
-        potential_results[i] = res
-        if res.g_residual < 1e-01
+        push!(potential_results, res)
+
+        if res.g_residual < grad_tol
             break
         end
     end
-    cut_results = potential_results[1:count]
-    min_idx = argmin(res.minimum for res in cut_results)
-    res = potential_results[min_idx]
+    println(count)
+
+    # Filter results with low gradient norm
+    valid_results = [r for r in potential_results if r.g_residual < grad_tol]
+
+    if !isempty(valid_results)
+        # Select result with lowest objective among valid results
+        min_idx = argmin([r.minimum for r in valid_results])
+        res = valid_results[min_idx]
+    else
+        # Fallback to result with smallest gradient norm
+        min_grad_idx = argmin([r.g_residual for r in potential_results])
+        res = potential_results[min_grad_idx]
+        @warn "No solution with gradient norm < $grad_tol. Selected best gradient: $(res.g_residual)"
+    end
 
     return (; res, td, count)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=100, num_selected=15, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=100, num_selected=15, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
