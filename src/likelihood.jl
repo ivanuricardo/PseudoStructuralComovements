@@ -218,7 +218,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-07, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_starts=50, num_selected=20, p=1, grad_tol=1e-01)
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -248,15 +248,15 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
     valid_results2 = [r for r in potential_results if r.g_residual < grad_tol * 10.0]
 
     if !isempty(valid_results)
-        # Select result with lowest objective among valid results
-        min_idx = argmin([r.minimum for r in valid_results])
+        # Select result with lowest gradient norm among valid results
+        min_idx = argmin([r.g_residual for r in valid_results])
         res = valid_results[min_idx]
     elseif !isempty(valid_results2)
-        # Fallback to result with smallest objective value, increase grad tol x10
-        min_grad_idx = argmin([r.minimum for r in valid_results2])
+        # Fallback to result with smallest gradient value, increase grad tol x10
+        min_grad_idx = argmin([r.g_residual for r in valid_results2])
         res = valid_results2[min_grad_idx]
     else
-        min_grad_idx = argmin([r.minimum for r in potential_results])
+        min_grad_idx = argmin([r.g_residual for r in potential_results])
         res = potential_results[min_grad_idx]
     end
 
@@ -289,7 +289,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
         end
     end
     if count > 0
-        min_grad_idx = argmin([r.minimum for r in potential_results])
+        min_grad_idx = argmin([r.g_residual for r in potential_results])
         println("count is $count, best is $min_grad_idx")
         res = potential_results[min_grad_idx]
     end
