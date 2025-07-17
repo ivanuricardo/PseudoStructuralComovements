@@ -187,7 +187,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=100, num_selected=15, p=1)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=80, num_selected=20, p=1)
     some_init = init_alg(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -218,7 +218,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=100, num_selected=15, p=1, grad_tol=1e-01)
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=80, num_selected=20, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -246,22 +246,29 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
 
     # Filter results with low gradient norm
     valid_results = [r for r in potential_results if r.g_residual < grad_tol]
+    valid_results2 = [r for r in potential_results if r.g_residual < grad_tol * 10.0]
 
     if !isempty(valid_results)
         # Select result with lowest objective among valid results
         min_idx = argmin([r.minimum for r in valid_results])
         res = valid_results[min_idx]
-    else
-        # Fallback to result with smallest objective value
-        min_grad_idx = argmin([r.minimum for r in potential_results])
-        res = potential_results[min_grad_idx]
+    elseif !isempty(valid_results2)
+        # Fallback to result with smallest objective value, increase grad tol x10
+        min_grad_idx = argmin([r.minimum for r in valid_results2])
+        res = valid_results2[min_grad_idx]
         @warn "No solution with gradient norm < $grad_tol. Selected best gradient: $(res.g_residual)"
+    else
+        valid_results3 = [r for r in potential_results if r.g_residual < grad_tol * 100.0]
+        min_grad_idx = argmin([r.minimum for r in valid_results3])
+        res = valid_results3[min_grad_idx]
+        @warn "No solution with gradient norm < $grad_tol. Selected best gradient: $(res.g_residual)"
+
     end
 
     return (; res, td, count)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=100, num_selected=15, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=80, num_selected=20, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
