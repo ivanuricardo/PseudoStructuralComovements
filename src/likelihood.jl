@@ -161,15 +161,6 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
         sparse_omega = sparse(omega)
         sparse_pi = sparse(pi_mat)
     end
-    det_term1 = det(sigma1)
-    det_term2 = det(sigma2)
-    if (det_term1 <= 0.0) || (det_term2 <= 0.0)
-        return 1e10
-    end
-
-    # no need for omegas because det = 1
-    logdet_term1 = dimvals[2] * log(det_term1)
-    logdet_term2 = dimvals[1] * log(det_term2)
 
     X = sparse_omega * ll
     precision_matrix = inv(X') * inv(X)
@@ -183,6 +174,18 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
         resid = sparse_omega * yt - sparse_pi * yt_m1
         sse += dot(resid, sparse_precision * resid)
     end
+
+    det_term1 = det(sigma1)
+    det_term2 = det(sigma2)
+    if det_term1 <= 0.0 || det_term2 <= 0.0
+        # quadratic penalty on negative/zero dets
+        pen = 1e6 * ((min(det_term1, 0.0))^2 + (min(det_term2, 0.0))^2)
+        return 0.5 * sse + pen
+    end
+
+    # no need for omegas because det = 1
+    logdet_term1 = dimvals[2] * log(det_term1)
+    logdet_term2 = dimvals[1] * log(det_term2)
 
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
