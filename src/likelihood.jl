@@ -279,12 +279,18 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
 
     res, td, count = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
     count = 0
+    potential_results = []
     while res.g_residual > 1.0
         count += 1
         res, td, count = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
         if count == 10
             break
         end
+        push!(potential_results, res)
+    end
+    if count == 10
+        min_grad_idx = argmin([r.minimum for r in potential_results])
+        res = potential_results[min_grad_idx]
     end
     if res.g_residual > 1.0
         @warn "g_residual is still large! At $(res.g_residual)"
