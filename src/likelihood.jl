@@ -256,9 +256,8 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
         min_grad_idx = argmin([r.minimum for r in valid_results2])
         res = valid_results2[min_grad_idx]
     else
-        valid_results3 = [r for r in potential_results if r.g_residual < grad_tol * 100.0]
-        min_grad_idx = argmin([r.minimum for r in valid_results3])
-        res = valid_results3[min_grad_idx]
+        min_grad_idx = argmin([r.minimum for r in potential_results])
+        res = potential_results[min_grad_idx]
     end
 
     return (; res, td, count)
@@ -279,11 +278,16 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
     resp = perm_resp .- mean(perm_resp, dims=2)
 
     res, td, count = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
-    if res.g_residual > 2.0
+    count = 0
+    while res.g_residual > 1.0
+        count += 1
         res, td, count = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
-        if res.g_residual > 2.0
-            @warn "g_residual is still large! At $(res.g_residual)"
+        if count == 10
+            break
         end
+    end
+    if res.g_residual > 1.0
+        @warn "g_residual is still large! At $(res.g_residual)"
     end
 
 
