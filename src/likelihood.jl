@@ -218,7 +218,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=80, num_selected=20, p=1, grad_tol=1e-01)
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-06, num_starts=50, num_selected=20, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -268,7 +268,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
     return (; res, td, count)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=80, num_selected=20, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-06, num_starts=50, num_selected=20, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
