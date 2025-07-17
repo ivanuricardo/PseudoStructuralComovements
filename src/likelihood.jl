@@ -283,10 +283,10 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
     while res.g_residual > 1.0
         count += 1
         res, td, count = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+        push!(potential_results, res)
         if count == 10
             break
         end
-        push!(potential_results, res)
     end
     if count == 10
         min_grad_idx = argmin([r.minimum for r in potential_results])
