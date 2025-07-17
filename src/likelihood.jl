@@ -249,11 +249,11 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
 
     if !isempty(valid_results)
         # Select result with lowest gradient norm among valid results
-        min_idx = argmin([r.g_residual for r in valid_results])
+        min_idx = argmin([r.minimum for r in valid_results])
         res = valid_results[min_idx]
     elseif !isempty(valid_results2)
         # Fallback to result with smallest gradient value, increase grad tol x10
-        min_grad_idx = argmin([r.g_residual for r in valid_results2])
+        min_grad_idx = argmin([r.minimum for r in valid_results2])
         res = valid_results2[min_grad_idx]
     else
         min_grad_idx = argmin([r.g_residual for r in potential_results])
@@ -289,7 +289,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
         end
     end
     if count > 0
-        min_grad_idx = argmin([r.g_residual for r in potential_results])
+        min_grad_idx = argmin([r.minimum for r in potential_results])
         println("count is $count, best is $min_grad_idx")
         res = potential_results[min_grad_idx]
     end
