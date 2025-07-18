@@ -229,9 +229,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
     res = nothing
 
     # Run all optimizations and collect results
-    count = 0
     for i in 1:size(chosen_start, 2)
-        count += 1
         td = TwiceDifferentiable(obj, chosen_start[:, i], autodiff=:forward)
         res = optimize(
             td,
@@ -263,7 +261,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
         res = potential_results[min_grad_idx]
     end
 
-    return (; res, td, count)
+    return (; res, td)
 end
 
 function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=50, num_selected=10, p=1)
@@ -280,21 +278,21 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
     pred = data[:, 1:(end-1)]
     resp = perm_resp .- mean(perm_resp, dims=2)
 
-    res, td, count = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
     count = 0
     potential_results = []
     while res.g_residual > 1.0
         count += 1
-        res, td, count = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+        res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
         push!(potential_results, res)
-        if count == 15
+        if count == 5
             break
         end
     end
     if count > 0
         min_grad_idx = argmin([r.minimum for r in potential_results])
-        println("count is $count, best is $min_grad_idx, g_res is $(res.g_residual)")
         res = potential_results[min_grad_idx]
+        println("count is $count, best is $min_grad_idx, g_res is $(res.g_residual)")
     end
 
     if res.g_residual > 1.0
@@ -344,7 +342,6 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
         hess_est,
         omega,
         pi_mat,
-        count,
     )
 end
 
