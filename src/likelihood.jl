@@ -190,7 +190,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-07, num_starts=80, num_selected=20, p=1)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=80, num_selected=20, p=1)
     some_init = init_alg(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -221,7 +221,7 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-07, num_sta
 
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -264,7 +264,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-07, num_s
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=50, num_selected=10, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
@@ -281,7 +281,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
     res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
     count = 0
     potential_results = []
-    while res.g_residual > 1.0
+    while res.g_residual > 1e-01
         count += 1
         res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
         push!(potential_results, res)
@@ -290,7 +290,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
         end
     end
     if count > 0
-        valid_results = [r for r in potential_results if r.g_residual < 2.0]
+        valid_results = [r for r in potential_results if r.g_residual < 1.0]
         min_grad_idx = argmin([r.minimum for r in valid_results])
         res = valid_results[min_grad_idx]
         println("count is $count, best is $min_grad_idx, g_res is $(res.g_residual)")
