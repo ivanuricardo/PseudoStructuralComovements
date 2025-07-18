@@ -290,8 +290,9 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-07, num_starts=
         end
     end
     if count > 0
-        min_grad_idx = argmin([r.minimum for r in potential_results])
-        res = potential_results[min_grad_idx]
+        valid_results = [r for r in potential_results if r.g_residual < 2.0]
+        min_grad_idx = argmin([r.minimum for r in valid_results])
+        res = valid_results[min_grad_idx]
         println("count is $count, best is $min_grad_idx, g_res is $(res.g_residual)")
     end
 
