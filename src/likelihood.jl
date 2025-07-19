@@ -282,8 +282,17 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
     count = 0
     potential_results = []
     while res.g_residual > 1e-01
-        count += 1
         res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+
+        hess_non = hessian!(td, res.minimizer)
+        hess_est = 0.5 .* (hess_non + hess_non')
+        hess_eigs = real.(eigvals(hess_est))
+        neg_eigs = hess_eigs[hess_eigs.<0.0]
+        if any(neg_eigs .< 1e-01)
+            continue
+        end
+        count += 1
+
         push!(potential_results, res)
         if count == 5
             break
