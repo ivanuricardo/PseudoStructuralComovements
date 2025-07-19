@@ -301,15 +301,10 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
         res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
 
         next_neg_eig_check = check_neg_eigs(td, res)
+        count += 1
         if !next_neg_eig_check
             push!(potential_results, res)
-            count += 1
-            if count == 5
-                break
-            end
-            continue
         end
-
         if count == 5
             break
         end
