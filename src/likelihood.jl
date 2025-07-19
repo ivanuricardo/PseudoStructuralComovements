@@ -221,6 +221,17 @@ function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_sta
 
 end
 
+function check_neg_eigs(td, res)
+    hess_non = hessian!(td, res.minimizer)
+    hess_est = 0.5 .* (hess_non + hess_non')
+    hess_eigs = real.(eigvals(hess_est))
+    neg_eigs = hess_eigs[hess_eigs.<0.0]
+    if any(neg_eigs .< 1e-01)
+        return true
+    end
+    return false
+end
+
 function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
@@ -237,7 +248,8 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
             BFGS(),
             Optim.Options(iterations=iters, f_abstol=tol, f_reltol=tol, g_abstol=grad_tol),
         )
-        push!(potential_results, res)
+        neg_eig_check = check_neg_eigs(td, res)
+        push!(potential_results, (res, td, neg_eig_check))
 
         if res.g_residual < 1e-02
             break
@@ -245,34 +257,23 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
     end
 
     # Filter results with low gradient norm
-    valid_results = [r for r in potential_results if r.g_residual < grad_tol]
-    valid_results2 = [r for r in potential_results if r.g_residual < grad_tol * 10.0]
+    valid_results = [
+        r for (r, td, neg_check) in potential_results
+        if !neg_check && r.g_residual < 1.0
+    ]
 
     if !isempty(valid_results)
-        # Select result with lowest gradient norm among valid results
-        min_idx = argmin([r.minimum for r in valid_results])
-        res = valid_results[min_idx]
-    elseif !isempty(valid_results2)
-        # Fallback to result with smallest gradient value, increase grad tol x10
-        min_grad_idx = argmin([r.minimum for r in valid_results2])
-        res = valid_results2[min_grad_idx]
+        # Choose valid result with smallest objective value
+        min_obj_idx = argmin([r.minimum for r in valid_results])
+        res = valid_results[min_obj_idx]
     else
-        min_grad_idx = argmin([r.g_residual for r in potential_results])
-        res = potential_results[min_grad_idx]
+        # Fallback: choose result with smallest objective value across all runs
+        min_obj_idx = argmin([r[1].minimum for r in potential_results])
+        res, td = potential_results[min_obj_idx][1:2]  # Extract res and td
+        @warn "No valid results! Using fallback (obj=$(res.minimum), g_res=$(res.g_residual))"
     end
 
     return (; res, td)
-end
-
-function check_neg_eigs(td, res)
-    hess_non = hessian!(td, res.minimizer)
-    hess_est = 0.5 .* (hess_non + hess_non')
-    hess_eigs = real.(eigvals(hess_est))
-    neg_eigs = hess_eigs[hess_eigs.<0.0]
-    if any(neg_eigs .< 1e-01)
-        return true
-    end
-    return false
 end
 
 function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1)
@@ -290,35 +291,6 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
     resp = perm_resp .- mean(perm_resp, dims=2)
 
     res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
-    count = 0
-    potential_results = []
-    first_neg_eig_check = check_neg_eigs(td, res)
-    if !first_neg_eig_check
-        push!(potential_results, res)
-    end
-
-    while res.g_residual > 1e-01 || first_neg_eig_check
-        res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
-
-        next_neg_eig_check = check_neg_eigs(td, res)
-        count += 1
-        if !next_neg_eig_check
-            push!(potential_results, res)
-        end
-        if count == 5
-            break
-        end
-    end
-    valid_results = [r for r in potential_results if r.g_residual < 1.0]
-    min_grad_idx = argmin([r.minimum for r in valid_results])
-    res = valid_results[min_grad_idx]
-    if count > 0
-        println("count is $count, best is $min_grad_idx, g_res is $(res.g_residual)")
-    end
-
-    if res.g_residual > 1.0
-        @warn "g_residual is still large! At $(res.g_residual)"
-    end
 
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
