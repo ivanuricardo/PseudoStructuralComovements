@@ -287,9 +287,8 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
         hess_non = hessian!(td, res.minimizer)
         hess_est = 0.5 .* (hess_non + hess_non')
         hess_eigs = real.(eigvals(hess_est))
-        min_eig = minimum(hess_eigs)
-        max_eig = maximum(abs.(hess_eigs))
-        if min_eig < -1e-3 * max_eig
+        neg_eigs = hess_eigs[hess_eigs.<0.0]
+        if any(neg_eigs .< 1e-01)
             continue
         end
         count += 1
