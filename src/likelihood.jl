@@ -263,11 +263,11 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
         min_obj_idx = argmin([r.minimum for r in valid_results])
         res = valid_results[min_obj_idx]
     else
-        # Fallback: choose result with smallest objective value across all runs
-        min_obj_idx = argmin([r[1].minimum for r in potential_results])
+        # Fallback: choose result with smallest gradient norm value across all runs
+        min_obj_idx = argmin([r[1].g_residual for r in potential_results])
         res, td = potential_results[min_obj_idx][1:2]  # Extract res and td
-        min_check = minimum(res.minimizer)
-        max_check = maximum(res.minimizer)
+        min_check = minimum(res.minimizer[1:6])
+        max_check = maximum(res.minimizer[1:6])
         @warn "No valid results! Using fallback, g_res=$(res.g_residual), min value is $min_check, max value is $max_check)"
     end
 
