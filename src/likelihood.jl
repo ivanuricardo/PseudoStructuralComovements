@@ -190,7 +190,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=80, num_selected=20, p=1)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=50, num_selected=15, p=1)
     some_init = init_alg(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -232,7 +232,7 @@ function check_neg_eigs(td, res)
     return false
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=15, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -250,10 +250,6 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
         )
         neg_eig_check = check_neg_eigs(td, res)
         push!(potential_results, (res, td, neg_eig_check))
-
-        if res.g_residual < 1e-02
-            break
-        end
     end
 
     # Filter results with low gradient norm
@@ -270,13 +266,15 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
         # Fallback: choose result with smallest objective value across all runs
         min_obj_idx = argmin([r[1].minimum for r in potential_results])
         res, td = potential_results[min_obj_idx][1:2]  # Extract res and td
-        @warn "No valid results! Using fallback (obj=$(res.minimum), g_res=$(res.g_residual))"
+        min_check = minimum(res.minimizer)
+        max_check = maximum(res.minimizer)
+        @warn "No valid results! Using fallback, g_res=$(res.g_residual), min value is $min_check, max value is $max_check)"
     end
 
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=15, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
