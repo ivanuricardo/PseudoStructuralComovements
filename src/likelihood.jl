@@ -190,7 +190,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=50, num_selected=15, p=1)
+function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=50, num_selected=10, p=1)
     some_init = init_alg(resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -232,7 +232,7 @@ function check_neg_eigs(td, res)
     return false
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=15, p=1, grad_tol=1e-01)
+function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -266,15 +266,12 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
         # Fallback: choose result with smallest gradient norm value across all runs
         min_obj_idx = argmin([r[1].g_residual for r in potential_results])
         res, td = potential_results[min_obj_idx][1:2]  # Extract res and td
-        min_check = minimum(res.minimizer[1:6])
-        max_check = maximum(res.minimizer[1:6])
-        @warn "No valid results! Using fallback, g_res=$(res.g_residual), min value is $min_check, max value is $max_check)"
     end
 
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=15, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
@@ -289,6 +286,37 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
     resp = perm_resp .- mean(perm_resp, dims=2)
 
     res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+    count = 0
+    potential_results = []
+    first_neg_eig_check = check_neg_eigs(td, res)
+    if !first_neg_eig_check
+        push!(potential_results, res)
+    end
+
+    while res.g_residual > 1e-01 || first_neg_eig_check
+        res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+
+        next_neg_eig_check = check_neg_eigs(td, res)
+        if !next_neg_eig_check
+            push!(potential_results, res)
+            count += 1
+        end
+        if count == 5
+            break
+        end
+    end
+    valid_results = [r for r in potential_results if r.g_residual < 1.0]
+    min_grad_idx = argmin([r.minimum for r in valid_results])
+    res = valid_results[min_grad_idx]
+    if count > 0
+        println("count is $count, best is $min_grad_idx, g_res is $(res.g_residual)")
+    end
+
+    if res.g_residual > 1.0
+        min_check = minimum(res.minimizer[1:6])
+        max_check = maximum(res.minimizer[1:6])
+        @warn "No valid results! Using fallback, g_res=$(res.g_residual), min value is $min_check, max value is $max_check)"
+    end
 
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
