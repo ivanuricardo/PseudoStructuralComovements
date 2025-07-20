@@ -285,37 +285,39 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
     pred = data[:, 1:(end-1)]
     resp = perm_resp .- mean(perm_resp, dims=2)
 
-    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+    all_results = []
     count = 0
-    potential_results = []
-    first_neg_eig_check = check_neg_eigs(td, res)
-    if !first_neg_eig_check
-        push!(potential_results, res)
-    end
 
+    # First optimization attempt
+    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+    first_neg_eig_check = check_neg_eigs(td, res)
+    push!(all_results, (res, td, first_neg_eig_check))
+
+    # Subsequent attempts if needed
     while res.g_residual > 1e-01 || first_neg_eig_check
         res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
-
         next_neg_eig_check = check_neg_eigs(td, res)
-        if !next_neg_eig_check
-            push!(potential_results, res)
-            count += 1
-        end
-        if count == 5
-            break
-        end
-    end
-    valid_results = [r for r in potential_results if r.g_residual < 1.0]
-    min_grad_idx = argmin([r.minimum for r in valid_results])
-    res = valid_results[min_grad_idx]
-    if count > 0
-        println("count is $count, best is $min_grad_idx, g_res is $(res.g_residual)")
+        push!(all_results, (res, td, next_neg_eig_check))
+        count += 1
+        (count >= 5) && break  # Max 5 additional attempts
     end
 
-    if res.g_residual > 1.0
-        min_check = minimum(res.minimizer[1:6])
-        max_check = maximum(res.minimizer[1:6])
-        @warn "No valid results! Using fallback, g_res=$(res.g_residual), min value is $min_check, max value is $max_check)"
+    # Select best result: prioritize valid (no neg eigs + low grad) then fallback to min objective
+    valid_results = [
+        r for (r, td, neg_check) in all_results
+        if !neg_check && r.g_residual < 1.0
+    ]
+
+    if !isempty(valid_results)
+        # Choose valid result with smallest objective value
+        min_obj_idx = argmin([r.minimum for r in valid_results])
+        res = valid_results[min_obj_idx]
+        println("Selected valid result (g_res=$(res.g_residual))")
+    else
+        # Fallback: choose result with smallest objective value across all runs
+        min_obj_idx = argmin([r[1].minimum for r in all_results])
+        res, td = all_results[min_obj_idx][1:2]  # Extract res and td
+        @warn "No valid results! Using fallback (obj=$(res.minimum), g_res=$(res.g_residual))"
     end
 
     hess_non = hessian!(td, res.minimizer)
