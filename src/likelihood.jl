@@ -312,7 +312,6 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
         # Choose valid result with smallest objective value
         min_obj_idx = argmin([r.minimum for r in valid_results])
         res = valid_results[min_obj_idx]
-        println("Selected valid result (g_res=$(res.g_residual))")
     else
         # Fallback: choose result with smallest objective value across all runs
         min_obj_idx = argmin([r[1].minimum for r in all_results])
