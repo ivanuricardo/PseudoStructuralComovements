@@ -316,7 +316,9 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
         # Fallback: choose result with smallest objective value across all runs
         min_obj_idx = argmin([r[1].minimum for r in all_results])
         res, td = all_results[min_obj_idx][1:2]  # Extract res and td
-        @warn "No valid results! Using fallback (obj=$(res.minimum), g_res=$(res.g_residual))"
+        min_check = minimum(res.minimizer[1:6])
+        max_check = maximum(res.minimizer[1:6])
+        @warn "No valid results! Using fallback, g_res=$(res.g_residual), min value is $min_check, max value is $max_check)"
     end
 
     hess_non = hessian!(td, res.minimizer)
