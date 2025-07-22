@@ -67,7 +67,7 @@ function pack_params(delta_star, gamma_star, u3, u4, ll1, ll2; p=1)
     vec_u3 = vecb(u3, true_n1)
     removek!(vec_u3, true_n1 * n2 - 1)
     vec_ll1 = vech(ll1)
-    removek!(vec_ll1, 1)
+    deleteat!(vec_ll1, 1)
     vec_ll2 = vech(ll2)
 
     return vcat(vec(delta_star), vec(gamma_star), vec_u3, vec(u4), vec_ll1, vec_ll2)

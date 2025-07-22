@@ -11,16 +11,9 @@ end
 
 aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
 bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * log(obs))
-#=function bic(ll, obs::Int, dimvals, ranks)=#
-#=    r1, r2 = ranks[1], ranks[2]=#
-#=    d1, d2 = dimvals[1], dimvals[2]=#
-#=    penalty = log(obs * d2) * r1 * (2 * d1 - r1) + log(obs * d1) * r2 * (2 * d2 - r2)=#
-#=    penalty /= (obs * d1 * d2)=#
-#=    return -2 * ll + penalty=#
-#=end=#
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
 
-function rank_selection(data, dimvals; iters=500)
+function rank_selection(data, dimvals; iters=1000)
 
     cen_data = data .- mean(data, dims=2)
     obs = size(cen_data, 2)
