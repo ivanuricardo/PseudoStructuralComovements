@@ -2,7 +2,7 @@ module PseudoStructuralComovements
 
 using Reexport
 @reexport using LinearAlgebra, Statistics, Random, JLD2, StatsPlots
-@reexport using ProgressMeter, TensorToolbox
+@reexport using ProgressMeter, TensorToolbox, Makie, CairoMakie
 
 using Optim
 using SparseArrays
