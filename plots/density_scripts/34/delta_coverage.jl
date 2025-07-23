@@ -1,6 +1,15 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
 
+density_results = load(datadir("coverage/34/delta_cov_results100.jld2"))
+
+correct_cov = density_results["correct_cov"]
+under_cov = density_results["under_cov"]
+over_cov = density_results["over_cov"]
+correct_coverage_results = sum(correct_cov, dims=2)
+under_coverage_results = sum(under_cov, dims=2)
+over_coverage_results = sum(over_cov, dims=2)
+
 # Labels
 estimators = ["γ₁", "γ₂", "γ₃"]
 delta_ranks = ["Correct", "Overestimated", "Underestimated"]
