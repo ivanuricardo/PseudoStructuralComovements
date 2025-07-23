@@ -163,7 +163,12 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     end
 
     X = sparse_omega * ll
-    precision_matrix = inv(X') * inv(X)
+    precision_matrix = try
+        inv(X') * inv(X)
+    catch e
+        isa(e, SingularException) || rethrow(e)
+        return 1e12  # huge penalty to push optimizer away
+    end
     sparse_precision = sparse(precision_matrix)
 
     sse = 0.0
