@@ -167,7 +167,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
         inv(X') * inv(X)
     catch e
         isa(e, SingularException) || rethrow(e)
-        return 1e12  # huge penalty to push optimizer away
+        return 1e9  # huge penalty to push optimizer away
     end
     sparse_precision = sparse(precision_matrix)
 
