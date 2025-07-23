@@ -19,7 +19,7 @@ under250 = vec(sum(under_cov250, dims=2))
 over250 = vec(sum(over_cov250, dims=2))
 
 # Labels
-gammas = ["γ̂₁", "γ̂₂", "γ̂₃"]
+gammas = ["γ₁", "γ₂", "γ₃"]
 delta_ranks = ["Correct", "Overestimated", "Underestimated"]
 sample_sizes = ["T = 100", "T = 250"]
 
