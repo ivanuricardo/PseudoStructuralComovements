@@ -4,7 +4,7 @@ using RCall
 R"""
 source("r_helpers.R")
 """
-Random.seed!(20250724)
+Random.seed!(20250723)
 const R_LOCK = ReentrantLock()
 
 sims = 100
