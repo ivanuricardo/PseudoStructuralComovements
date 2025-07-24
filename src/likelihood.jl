@@ -1,4 +1,6 @@
 
+const R_LOCK = ReentrantLock()
+
 function unpack_params(theta, dimvals, ranks; p=1)
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
@@ -94,22 +96,25 @@ function init_alg(data, dimvals, ranks; p=1)
     N2_r2 = dimvals[2] - ranks[2]
     ten_data = reshape(data, (dimvals[1], dimvals[2], obs))
     perm_data = permutedims(ten_data, (3, 1, 2))
-    rrmar_init = R"""
-    d1 = $dimvals[1]
-    d2 = $dimvals[2]
-    r1 = $ranks[1]
-    r2 = $ranks[2]
-    data <- $perm_data
-    est <- matAR.RR.est(data, method = "RRMLE", k1 = r1, k2 = r2, tol = 1e-08)
-    """
-    @rget est
-
-    u1_est = est[:loading][:U1][:, 1:ranks[1]]
-    u2_est = est[:loading][:U2][:, 1:ranks[2]]
-    u3_est = est[:loading][:V1][:, 1:ranks[1]]
-    u4_est = est[:loading][:V2][:, 1:ranks[2]]
-    sigma1 = est[:Sig1]
-    sigma2 = est[:Sig2]
+    (u1_est, u2_est, u3_est, u4_est, sigma1, sigma2) = lock(R_LOCK) do
+        rrmar_init = R"""
+        d1 = $(dimvals[1])
+        d2 = $(dimvals[2])
+        r1 = $(ranks[1])
+        r2 = $(ranks[2])
+        data <- $(perm_data)
+        est <- matAR.RR.est(data, method = "RRMLE", k1 = r1, k2 = r2, tol = 1e-08)
+        """
+        @rget est
+        (
+            est[:loading][:U1][:, 1:ranks[1]],   # u1_est
+            est[:loading][:U2][:, 1:ranks[2]],   # u2_est
+            est[:loading][:V1][:, 1:ranks[1]],   # u3_est
+            est[:loading][:V2][:, 1:ranks[2]],   # u4_est
+            est[:Sig1],                           # sigma1
+            est[:Sig2]                            # sigma2
+        )
+    end
 
     u3_new_prime = u1_est[(N1_r1+1):end, :] * u3_est'
     u3 = u3_new_prime / u3_new_prime[1]
@@ -233,7 +238,6 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-08, n
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
-    println(chosen_idx)
 
     return chosen_start
 
@@ -317,7 +321,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
         next_neg_eig_check = check_neg_eigs(td, res)
         push!(all_results, (res, td, next_neg_eig_check))
         count += 1
-        (count >= 5) && break  # Max 10 additional attempts
+        (count >= 3) && break  # Max 10 additional attempts
     end
 
     # Select best result: prioritize valid (no neg eigs + low grad) then fallback to min objective
