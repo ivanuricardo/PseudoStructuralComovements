@@ -1,9 +1,4 @@
 
-using RCall
-R"""
-source("r_helpers.R")
-"""
-
 function unpack_params(theta, dimvals, ranks; p=1)
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
@@ -92,42 +87,53 @@ function rand_init(dimvals, ranks; p=1)
 
 end
 
-function init_alg(data, resp, pred, dimvals, ranks; p=1)
+function init_alg(data, dimvals, ranks; p=1)
 
-    pdims = prod(dimvals)
-    r = prod(ranks)
+    obs = size(data, 2)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
+    ten_data = reshape(data, (dimvals[1], dimvals[2], obs))
+    perm_data = permutedims(ten_data, (3, 1, 2))
+    rrmar_init = R"""
+    d1 = $dimvals[1]
+    d2 = $dimvals[2]
+    r1 = $ranks[1]
+    r2 = $ranks[2]
+    data <- $perm_data
+    est <- matAR.RR.est(data, method = "RRMLE", k1 = r1, k2 = r2, tol = 1e-08)
+    """
+    @rget est
 
-    coef = ols_coef(resp, pred)
-    if p != 1
-        coef = coef[1:pdims, 1:pdims]
-    end
+    u1_est = est[:loading][:U1][:, 1:ranks[1]]
+    u2_est = est[:loading][:U2][:, 1:ranks[2]]
+    u3_est = est[:loading][:V1][:, 1:ranks[1]]
+    u4_est = est[:loading][:V2][:, 1:ranks[2]]
+    sigma1 = est[:Sig1]
+    sigma2 = est[:Sig2]
 
-    tensor_coef =
-        matten(coef, [1, 2], [3, 4], [dimvals[1], dimvals[2], dimvals[1], dimvals[2]])
-    flat1 = tenmat(tensor_coef, row=1)
-    flat2 = tenmat(tensor_coef, row=2)
-    u1 = svd(flat1).U[:, 1:ranks[1]]
-    u2 = svd(flat2).U[:, 1:ranks[2]]
+    u3_new_prime = u1_est[(N1_r1+1):end, :] * u3_est'
+    u3 = u3_new_prime / u3_new_prime[1]
+    u3 = copy(u3')
 
-    delta = nullspace(u1')
-    rotate_u!(delta)
-    delta_star = delta[(N1_r1+1):end, :]
-    gamma = nullspace(u2')
-    rotate_u!(gamma)
-    gamma_star = gamma[(N2_r2+1):end, :]
+    u4_new = u4_est * u2_est[(N2_r2+1):end, :]'
+    u4 = u4_new * u3_new_prime[1]
 
-    perm_mat = perm_matrix(dimvals, ranks)
-    omega = create_omega(delta_star, gamma_star, dimvals, ranks)
-    pi_mat = omega * perm_mat * coef
-    pi_star = pi_mat[(pdims-r+1):end, :]
-    u4_est, u3_est = nearest_kron(pi_star', size(u2), size(u1))
+    delta = nullspace(u1_est')
+    delta_rot = rotate_u!(delta)
+    delta_star = delta_rot[(N1_r1+1):end, :]
 
-    s = u3_est[1, 1]
+    gamma = nullspace(u2_est')
+    gamma_rot = rotate_u!(gamma)
+    gamma_star = gamma_rot[(N2_r2+1):end, :]
 
-    u3 = u3_est / s
-    u4 = u4_est * s
+    chol1 = cholesky(Symmetric(sigma1))
+    ll1 = chol1.L
+    chol2 = cholesky(Symmetric(sigma2))
+    ll2 = chol2.L
+
+    ss = ll1[1, 1]
+    ll1_rot = ll1 / ss
+    ll2_rot = ll2 * ss
 
     if p != 1
         u3_bot = randn(dimvals[1], ranks[1])
@@ -138,59 +144,9 @@ function init_alg(data, resp, pred, dimvals, ranks; p=1)
         u4 = vcat(u4, u4_bot)
     end
 
-    return pack_params(delta_star, gamma_star, u3, u4, I(dimvals[1]), I(dimvals[2]); p)
+    return pack_params(delta_star, gamma_star, u3, u4, ll1_rot, ll2_rot; p)
 
 end
-
-#=function init_alg(resp, pred, dimvals, ranks; p=1)=#
-#==#
-#=    pdims = prod(dimvals)=#
-#=    r = prod(ranks)=#
-#=    N1_r1 = dimvals[1] - ranks[1]=#
-#=    N2_r2 = dimvals[2] - ranks[2]=#
-#==#
-#=    coef = ols_coef(resp, pred)=#
-#=    if p != 1=#
-#=        coef = coef[1:pdims, 1:pdims]=#
-#=    end=#
-#==#
-#=    tensor_coef ==#
-#=        matten(coef, [1, 2], [3, 4], [dimvals[1], dimvals[2], dimvals[1], dimvals[2]])=#
-#=    flat1 = tenmat(tensor_coef, row=1)=#
-#=    flat2 = tenmat(tensor_coef, row=2)=#
-#=    u1 = svd(flat1).U[:, 1:ranks[1]]=#
-#=    u2 = svd(flat2).U[:, 1:ranks[2]]=#
-#==#
-#=    delta = nullspace(u1')=#
-#=    rotate_u!(delta)=#
-#=    delta_star = delta[(N1_r1+1):end, :]=#
-#=    gamma = nullspace(u2')=#
-#=    rotate_u!(gamma)=#
-#=    gamma_star = gamma[(N2_r2+1):end, :]=#
-#==#
-#=    perm_mat = perm_matrix(dimvals, ranks)=#
-#=    omega = create_omega(delta_star, gamma_star, dimvals, ranks)=#
-#=    pi_mat = omega * perm_mat * coef=#
-#=    pi_star = pi_mat[(pdims-r+1):end, :]=#
-#=    u4_est, u3_est = nearest_kron(pi_star', size(u2), size(u1))=#
-#==#
-#=    s = u3_est[1, 1]=#
-#==#
-#=    u3 = u3_est / s=#
-#=    u4 = u4_est * s=#
-#==#
-#=    if p != 1=#
-#=        u3_bot = randn(dimvals[1], ranks[1])=#
-#=        s_alt = u3_bot[1, 1]=#
-#=        u3_bot = copy(u3_bot) / s_alt=#
-#=        u4_bot = randn(dimvals[2], ranks[2]) * s_alt=#
-#=        u3 = vcat(u3, u3_bot)=#
-#=        u4 = vcat(u4, u4_bot)=#
-#=    end=#
-#==#
-#=    return pack_params(delta_star, gamma_star, u3, u4, I(dimvals[1]), I(dimvals[2]); p)=#
-#==#
-#=end=#
 
 function loglike(theta, resp, pred, dimvals, ranks; p=1)
     N1_r1 = dimvals[1] - ranks[1]
@@ -251,8 +207,8 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=50, num_selected=10, p=1)
-    some_init = init_alg(data, resp, pred, dimvals, ranks; p)
+function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=10, num_selected=3, p=1)
+    some_init = init_alg(data, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
@@ -277,6 +233,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-08, n
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
+    println(chosen_idx)
 
     return chosen_start
 
@@ -287,13 +244,13 @@ function check_neg_eigs(td, res)
     hess_est = 0.5 .* (hess_non + hess_non')
     hess_eigs = real.(eigvals(hess_est))
     neg_eigs = hess_eigs[hess_eigs.<0.0]
-    if any(neg_eigs .< 1e-01)
+    if any(neg_eigs .< 1e-02)
         return true
     end
     return false
 end
 
-function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
+function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=10, num_selected=3, p=1, grad_tol=1e-02)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -332,7 +289,7 @@ function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-08,
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=50, num_selected=10, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=10, num_selected=3, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
@@ -355,7 +312,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     push!(all_results, (res, td, first_neg_eig_check))
 
     # Subsequent attempts if needed
-    while res.g_residual > 1e-01 || first_neg_eig_check
+    while res.g_residual > 1e-02 || first_neg_eig_check
         res, td = main_algorithm(data, resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
         next_neg_eig_check = check_neg_eigs(td, res)
         push!(all_results, (res, td, next_neg_eig_check))

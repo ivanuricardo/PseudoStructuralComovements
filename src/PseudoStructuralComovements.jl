@@ -5,6 +5,7 @@ using Reexport
 @reexport using ProgressMeter, TensorToolbox, Makie, CairoMakie
 
 using Optim
+using RCall
 using SparseArrays
 using Distributions
 using NLSolversBase
@@ -60,5 +61,14 @@ export isstable
 export generate_rrmar_coef
 export simulate_rrmar_data
 export sim_stats
+
+function __init__()
+    r_path1 = joinpath(@__DIR__, "r_helpers.R")  # Path to R file
+    r_path2 = joinpath(@__DIR__, "tenAR.R")  # Path to R file
+    r_path3 = joinpath(@__DIR__, "tenFM.R")  # Path to R file
+    R"source($r_path1)"  # Source the file in R
+    R"source($r_path2)"  # Source the file in R
+    R"source($r_path3)"  # Source the file in R
+end
 
 end

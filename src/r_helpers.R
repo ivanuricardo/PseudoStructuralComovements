@@ -1,8 +1,5 @@
 ### Helper functions
 
-source("tenAR.R")
-source("tenFM.R")
-
 # mat projection
 matAR.PROJ <- function(xx, dim, r, t) {
     xx.mat <- matrix(xx, t, dim[1] * dim[2])
