@@ -1,4 +1,9 @@
 
+using RCall
+R"""
+source("r_helpers.R")
+"""
+
 function unpack_params(theta, dimvals, ranks; p=1)
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
@@ -87,7 +92,7 @@ function rand_init(dimvals, ranks; p=1)
 
 end
 
-function init_alg(resp, pred, dimvals, ranks; p=1)
+function init_alg(data, resp, pred, dimvals, ranks; p=1)
 
     pdims = prod(dimvals)
     r = prod(ranks)
@@ -136,6 +141,56 @@ function init_alg(resp, pred, dimvals, ranks; p=1)
     return pack_params(delta_star, gamma_star, u3, u4, I(dimvals[1]), I(dimvals[2]); p)
 
 end
+
+#=function init_alg(resp, pred, dimvals, ranks; p=1)=#
+#==#
+#=    pdims = prod(dimvals)=#
+#=    r = prod(ranks)=#
+#=    N1_r1 = dimvals[1] - ranks[1]=#
+#=    N2_r2 = dimvals[2] - ranks[2]=#
+#==#
+#=    coef = ols_coef(resp, pred)=#
+#=    if p != 1=#
+#=        coef = coef[1:pdims, 1:pdims]=#
+#=    end=#
+#==#
+#=    tensor_coef ==#
+#=        matten(coef, [1, 2], [3, 4], [dimvals[1], dimvals[2], dimvals[1], dimvals[2]])=#
+#=    flat1 = tenmat(tensor_coef, row=1)=#
+#=    flat2 = tenmat(tensor_coef, row=2)=#
+#=    u1 = svd(flat1).U[:, 1:ranks[1]]=#
+#=    u2 = svd(flat2).U[:, 1:ranks[2]]=#
+#==#
+#=    delta = nullspace(u1')=#
+#=    rotate_u!(delta)=#
+#=    delta_star = delta[(N1_r1+1):end, :]=#
+#=    gamma = nullspace(u2')=#
+#=    rotate_u!(gamma)=#
+#=    gamma_star = gamma[(N2_r2+1):end, :]=#
+#==#
+#=    perm_mat = perm_matrix(dimvals, ranks)=#
+#=    omega = create_omega(delta_star, gamma_star, dimvals, ranks)=#
+#=    pi_mat = omega * perm_mat * coef=#
+#=    pi_star = pi_mat[(pdims-r+1):end, :]=#
+#=    u4_est, u3_est = nearest_kron(pi_star', size(u2), size(u1))=#
+#==#
+#=    s = u3_est[1, 1]=#
+#==#
+#=    u3 = u3_est / s=#
+#=    u4 = u4_est * s=#
+#==#
+#=    if p != 1=#
+#=        u3_bot = randn(dimvals[1], ranks[1])=#
+#=        s_alt = u3_bot[1, 1]=#
+#=        u3_bot = copy(u3_bot) / s_alt=#
+#=        u4_bot = randn(dimvals[2], ranks[2]) * s_alt=#
+#=        u3 = vcat(u3, u3_bot)=#
+#=        u4 = vcat(u4, u4_bot)=#
+#=    end=#
+#==#
+#=    return pack_params(delta_star, gamma_star, u3, u4, I(dimvals[1]), I(dimvals[2]); p)=#
+#==#
+#=end=#
 
 function loglike(theta, resp, pred, dimvals, ranks; p=1)
     N1_r1 = dimvals[1] - ranks[1]
@@ -196,8 +251,8 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=50, num_selected=10, p=1)
-    some_init = init_alg(resp, pred, dimvals, ranks; p)
+function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=50, num_selected=10, p=1)
+    some_init = init_alg(data, resp, pred, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
@@ -238,9 +293,9 @@ function check_neg_eigs(td, res)
     return false
 end
 
-function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
+function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1, grad_tol=1e-01)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
-    chosen_start = comovement_init(resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
+    chosen_start = comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
     td = nothing
     res = nothing
@@ -277,7 +332,7 @@ function main_algorithm(resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_s
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=50, num_selected=10, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=50, num_selected=10, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
@@ -295,17 +350,17 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
     count = 0
 
     # First optimization attempt
-    res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+    res, td = main_algorithm(data, resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
     first_neg_eig_check = check_neg_eigs(td, res)
     push!(all_results, (res, td, first_neg_eig_check))
 
     # Subsequent attempts if needed
     while res.g_residual > 1e-01 || first_neg_eig_check
-        res, td = main_algorithm(resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
+        res, td = main_algorithm(data, resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
         next_neg_eig_check = check_neg_eigs(td, res)
         push!(all_results, (res, td, next_neg_eig_check))
         count += 1
-        (count >= 5) && break  # Max 5 additional attempts
+        (count >= 5) && break  # Max 10 additional attempts
     end
 
     # Select best result: prioritize valid (no neg eigs + low grad) then fallback to min objective
