@@ -212,7 +212,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-08, num_starts=10, num_selected=3, p=1)
+function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, num_starts=10, num_selected=3, p=1)
     some_init = init_alg(data, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -248,13 +248,13 @@ function check_neg_eigs(td, res)
     hess_est = 0.5 .* (hess_non + hess_non')
     hess_eigs = real.(eigvals(hess_est))
     neg_eigs = hess_eigs[hess_eigs.<0.0]
-    if any(neg_eigs .< 1e-02)
+    if any(neg_eigs .< -1e-02)
         return true
     end
     return false
 end
 
-function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-08, num_starts=10, num_selected=3, p=1, grad_tol=1e-02)
+function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-10, num_starts=10, num_selected=3, p=1, grad_tol=1e-02)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -293,7 +293,7 @@ function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-08,
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=10, num_selected=3, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=10, num_selected=3, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
@@ -321,7 +321,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-08, num_starts=
         next_neg_eig_check = check_neg_eigs(td, res)
         push!(all_results, (res, td, next_neg_eig_check))
         count += 1
-        (count >= 3) && break  # Max 10 additional attempts
+        (count >= 2) && break  # Max 3 additional attempts
     end
 
     # Select best result: prioritize valid (no neg eigs + low grad) then fallback to min objective
