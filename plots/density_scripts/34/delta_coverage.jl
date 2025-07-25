@@ -64,7 +64,9 @@ for (j, T) in enumerate(sample_sizes)
         )
     end
 
-    axislegend(ax; position=:rt, backgroundcolor=:transparent)
+    if j == 1
+        axislegend(ax; position=:rt, backgroundcolor=:transparent)
+    end
 end
 
 fig

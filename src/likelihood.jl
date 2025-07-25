@@ -237,7 +237,6 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
-    println(chosen_idx)
 
     return chosen_start
 

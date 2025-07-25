@@ -46,7 +46,7 @@ offsets = [-bar_width, 0.0, bar_width]  # For each gamma estimator
 fig = Figure(
     size=(800, 500),
     backgroundcolor=:transparent     # make the figure background invisible
-)
+);
 
 for (j, T) in enumerate(sample_sizes)
     ax = Axis(fig[j, 1],
@@ -67,7 +67,9 @@ for (j, T) in enumerate(sample_sizes)
         )
     end
 
-    axislegend(ax; position=:rt, backgroundcolor=:transparent)
+    if j == 1
+        axislegend(ax; position=:rt, backgroundcolor=:transparent)
+    end
 end
 
 save("../../density_plots/34/gamma_coverage_plot.png", fig)
