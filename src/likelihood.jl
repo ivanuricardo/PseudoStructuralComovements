@@ -210,7 +210,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, num_starts=50, num_selected=15, p=1)
+function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, num_starts=100, num_selected=10, p=1)
     some_init = init_alg(data, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -221,7 +221,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
             both_init = copy(some_init)
         else
             #=both_init = rand_init(dimvals, ranks; p)=#
-            both_init = copy(some_init) .+ 0.01 .* randn(length(some_init))
+            both_init = copy(some_init) .+ (0.001 * i) .* randn(length(some_init))
         end
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
@@ -237,6 +237,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
+    println(chosen_idx)
 
     return chosen_start
 
@@ -253,7 +254,7 @@ function check_neg_eigs(td, res)
     return false
 end
 
-function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-10, num_starts=50, num_selected=15, p=1, grad_tol=1e-02)
+function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-10, num_starts=100, num_selected=10, p=1, grad_tol=1e-02)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -292,7 +293,7 @@ function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-10,
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=50, num_selected=15, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=100, num_selected=10, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
