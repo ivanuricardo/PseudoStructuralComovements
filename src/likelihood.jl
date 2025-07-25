@@ -210,7 +210,7 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
 end
 
-function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, num_starts=10, num_selected=3, p=1)
+function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, num_starts=50, num_selected=15, p=1)
     some_init = init_alg(data, dimvals, ranks; p)
     init_length = length(some_init)
     potential_starts = fill(NaN, init_length + 1, num_starts)
@@ -253,7 +253,7 @@ function check_neg_eigs(td, res)
     return false
 end
 
-function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-10, num_starts=10, num_selected=3, p=1, grad_tol=1e-02)
+function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-10, num_starts=50, num_selected=15, p=1, grad_tol=1e-02)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
     chosen_start = comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=grad_tol, num_starts, num_selected, p)
     potential_results = []
@@ -292,7 +292,7 @@ function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-10,
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=40, num_selected=10, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=50, num_selected=15, p=1)
 
     if p != 1
         if prod(dimvals) * p != size(data, 1)
@@ -339,9 +339,8 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
         res, td = all_results[min_obj_idx][1:2]  # Extract res and td
         theta_est = Optim.minimizer(res)
 
-        delta_est, gamma_est, u3_est, u4_est, ll1_est, ll2_est =
-            unpack_params(theta_est, dimvals, ranks; p)
-        @warn "No valid results! Using fallback, g_res=$(res.g_residual), delta is $delta_est, gamma is $gamma_est)"
+        delta_est, gamma_est, u3_est, u4_est, ll1_est, ll2_est = unpack_params(theta_est, dimvals, ranks; p)
+        @warn "No valid results! Using fallback, g_res=$(res.g_residual), delta is $(delta_est), gamma is $(gamma_est)"
     end
 
     hess_non = hessian!(td, res.minimizer)
@@ -360,6 +359,10 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     delta_stderr = stderrs[1:num_delta]
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
     gamma_stderr = stderrs[(num_delta+1):(num_delta+num_gamma)]
+
+    theta_est = Optim.minimizer(res)
+
+    delta_est, gamma_est, u3_est, u4_est, ll1_est, ll2_est = unpack_params(theta_est, dimvals, ranks; p)
 
     delta_star = delta_est[(dimvals[1]-ranks[1]+1):end, :]
     gamma_star = gamma_est[(dimvals[2]-ranks[2]+1):end, :]

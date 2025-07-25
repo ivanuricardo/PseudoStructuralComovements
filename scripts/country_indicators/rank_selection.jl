@@ -33,7 +33,7 @@ sd <- matAR.RR.se(est$A1, est$A2, 3, 1, method = "RRMLE", Sigma1=est$Sig1, Sigma
 
 res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000)
 res2 = comovement_reg(cen_data, dimvals, [2, 1]; iters=1000)
-res3new = comovement_reg(cen_data, dimvals, [3, 1]; iters=1000)
+res3 = comovement_reg(cen_data, dimvals, [3, 1]; iters=1000)
 res4 = comovement_reg(cen_data, dimvals, [4, 1]; iters=1000)
 res5 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000)
 res6 = comovement_reg(cen_data, dimvals, [2, 2]; iters=1000)
