@@ -53,7 +53,7 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
         coef_eigs = round.(sort(abs.(eigvals(A)), rev=true), digits=8)
         last_idx = findlast(!iszero, coef_eigs)
 
-        if isstable(A, maxeigen) && (coef_eigs[last_idx] > 0.2)
+        if isstable(A, maxeigen) && (coef_eigs[last_idx] > 0.3)
             break
         end
     end
