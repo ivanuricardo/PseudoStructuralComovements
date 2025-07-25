@@ -320,7 +320,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
         next_neg_eig_check = check_neg_eigs(td, res)
         push!(all_results, (res, td, next_neg_eig_check))
         count += 1
-        (count >= 4) && break  # Max 10 additional attempts
+        (count >= 9) && break  # Max 10 additional attempts
     end
 
     # Select best result: prioritize valid (no neg eigs + low grad) then fallback to min objective
@@ -337,9 +337,11 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
         # Fallback: choose result with smallest objective value across all runs
         min_obj_idx = argmin([r[1].minimum for r in all_results])
         res, td = all_results[min_obj_idx][1:2]  # Extract res and td
-        min_check = minimum(res.minimizer[1:6])
-        max_check = maximum(res.minimizer[1:6])
-        @warn "No valid results! Using fallback, g_res=$(res.g_residual), min value is $min_check, max value is $max_check)"
+        theta_est = Optim.minimizer(res)
+
+        delta_est, gamma_est, u3_est, u4_est, ll1_est, ll2_est =
+            unpack_params(theta_est, dimvals, ranks; p)
+        @warn "No valid results! Using fallback, g_res=$(res.g_residual), delta is $delta_est, gamma is $gamma_est)"
     end
 
     hess_non = hessian!(td, res.minimizer)
@@ -352,10 +354,6 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     else
         hess_pd = copy(hess_est)
     end
-    theta_est = Optim.minimizer(res)
-
-    delta_est, gamma_est, u3_est, u4_est, ll1_est, ll2_est =
-        unpack_params(theta_est, dimvals, ranks; p)
 
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     stderrs = sqrt.(abs.(diag(inv(hess_pd))))
