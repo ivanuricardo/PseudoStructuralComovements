@@ -1,6 +1,4 @@
 
-const R_LOCK = ReentrantLock()
-
 function unpack_params(theta, dimvals, ranks; p=1)
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
     num_gamma = ranks[2] * (dimvals[2] - ranks[2])
@@ -222,7 +220,8 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
         if i == 1
             both_init = copy(some_init)
         else
-            both_init = rand_init(dimvals, ranks; p)
+            #=both_init = rand_init(dimvals, ranks; p)=#
+            both_init = copy(some_init) .+ 0.001 .* randn(length(some_init))
         end
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
@@ -321,7 +320,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
         next_neg_eig_check = check_neg_eigs(td, res)
         push!(all_results, (res, td, next_neg_eig_check))
         count += 1
-        (count >= 2) && break  # Max 3 additional attempts
+        (count >= 4) && break  # Max 3 additional attempts
     end
 
     # Select best result: prioritize valid (no neg eigs + low grad) then fallback to min objective

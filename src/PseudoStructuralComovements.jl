@@ -1,5 +1,8 @@
 module PseudoStructuralComovements
 
+const R_LOCK = ReentrantLock()
+export R_LOCK
+
 using Reexport
 @reexport using LinearAlgebra, Statistics, Random, JLD2, StatsPlots
 @reexport using ProgressMeter, TensorToolbox, Makie, CairoMakie

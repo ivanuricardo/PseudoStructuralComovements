@@ -5,7 +5,6 @@ R"""
 source("r_helpers.R")
 """
 Random.seed!(20250723)
-const R_LOCK = ReentrantLock()
 
 sims = 100
 dimvals = [3, 6]

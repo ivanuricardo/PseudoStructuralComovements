@@ -50,8 +50,10 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
             large_perm = kron(I(p), perm_mat)
             A .= inv(omega_tilde * large_perm) * pi_tilde
         end
+        coef_eigs = round.(sort(abs.(eigvals(A)), rev=true), digits=8)
+        last_idx = findlast(!iszero, coef_eigs)
 
-        if isstable(A, maxeigen)
+        if isstable(A, maxeigen) && (coef_eigs[last_idx] > 0.2)
             break
         end
     end
