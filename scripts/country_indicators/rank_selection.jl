@@ -14,7 +14,7 @@ pdata = permutedims(matdata, (3, 1, 2))
 dimvals = collect(size(matdata[:, :, 1]))
 cen_data = vecdata .- mean(vecdata, dims=2)
 
-smallicest = rank_selection(vecdata, dimvals; iters=1000)
+smallicest = rank_selection(cen_data, dimvals; iters=1000)
 
 small_bench = R"""
 d1 = $dimvals[1]
