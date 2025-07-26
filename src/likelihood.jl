@@ -151,7 +151,7 @@ function init_alg(data, dimvals, ranks; p=1)
 
 end
 
-function loglike(theta, resp, pred, dimvals, ranks; p=1)
+function loglike_calc(theta, resp, pred, dimvals, ranks; p=1)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]
 
@@ -208,6 +208,20 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     logdet_term2 = dimvals[1] * log(det_term2)
 
     return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
+end
+
+function loglike(theta, resp, pred, dimvals, ranks; p=1)
+    ell = try
+        loglike_calc(theta, resp, pred, dimvals, ranks; p)
+    catch e
+        @warn "Log Likelihood returns an error!"
+        return 1e12
+    end
+    if !isfinite(ell)
+        @warn "Log Likelihood returns an infinite value!"
+        return 1e12
+    end
+    return ell
 end
 
 function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, num_starts=100, num_selected=10, p=1)

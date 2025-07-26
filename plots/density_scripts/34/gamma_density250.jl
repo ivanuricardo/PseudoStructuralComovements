@@ -12,21 +12,21 @@ correct_cov = density_results["correct_cov"]
 under_cov = density_results["under_cov"]
 over_cov = density_results["over_cov"]
 
-h1 = density(correct_gamma[1, :], legend=false, ylabel="Density")
-density!(under_gamma[1, :])
-density!(over_gamma[1, :])
+h1 = StatsPlots.density(correct_gamma[1, :], legend=false, ylabel="Density")
+StatsPlots.density!(under_gamma[1, :])
+StatsPlots.density!(over_gamma[1, :])
 vline!([gamma_true[2]])
 savefig(h1, "../../density_plots/34/gamma_density250_1.png")
 
-h2 = density(correct_gamma[2, :], legend=false)
-density!(under_gamma[2, :])
-density!(over_gamma[2, :])
+h2 = StatsPlots.density(correct_gamma[2, :], legend=false)
+StatsPlots.density!(under_gamma[2, :])
+StatsPlots.density!(over_gamma[2, :])
 vline!([gamma_true[3]])
 savefig(h2, "../../density_plots/34/gamma_density250_2.png")
 
-h3 = density(correct_gamma[3, :], legend=false)
-density!(under_gamma[3, :], label="Underestimated rank")
-density!(over_gamma[3, :], label="Overestimated rank")
+h3 = StatsPlots.density(correct_gamma[3, :], legend=false)
+StatsPlots.density!(under_gamma[3, :], label="Underestimated rank")
+StatsPlots.density!(over_gamma[3, :], label="Overestimated rank")
 vline!([gamma_true[4]], label="True value")
 savefig(h3, "../../density_plots/34/gamma_density250_3.png")
 
