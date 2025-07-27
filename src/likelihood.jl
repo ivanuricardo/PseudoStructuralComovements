@@ -235,7 +235,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
             both_init = copy(some_init)
         else
             #=both_init = rand_init(dimvals, ranks; p)=#
-            both_init = copy(some_init) .+ (0.001 * i) .* randn(length(some_init))
+            both_init = copy(some_init) .+ (0.01 * i) .* randn(length(some_init))
         end
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
@@ -250,6 +250,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
         potential_starts[1:(end-1), i] = res.minimizer
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
+    println(chosen_idx)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
 
     return chosen_start
