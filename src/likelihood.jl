@@ -218,7 +218,6 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
         return 1e12
     end
     if !isfinite(ell)
-        @warn "Log Likelihood returns an infinite value!"
         return 1e12
     end
     return ell
@@ -250,7 +249,6 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
         potential_starts[1:(end-1), i] = res.minimizer
     end
     chosen_idx = partialsortperm(potential_starts[end, :], 1:num_selected)
-    println(chosen_idx)
     chosen_start = potential_starts[1:(end-1), chosen_idx]
 
     return chosen_start
