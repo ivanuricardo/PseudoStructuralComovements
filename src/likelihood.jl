@@ -333,7 +333,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
         next_neg_eig_check = check_neg_eigs(td, res)
         push!(all_results, (res, td, next_neg_eig_check))
         count += 1
-        (count >= 9) && break  # Max 10 additional attempts
+        (count >= 2) && break  # Max 3 additional attempts
     end
 
     # Select best result: prioritize valid (no neg eigs + low grad) then fallback to min objective
