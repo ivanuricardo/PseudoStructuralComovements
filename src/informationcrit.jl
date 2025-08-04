@@ -1,8 +1,8 @@
 
-function system_parameters(dimvals, ranks)
+function system_parameters(dimvals, ranks; p=1)
     first_term = ranks[1] * (dimvals[1] - ranks[1])
     second_term = ranks[2] * (dimvals[2] - ranks[2])
-    third_term = ranks[1] * dimvals[1] + ranks[2] * dimvals[2]
+    third_term = p * ranks[1] * dimvals[1] + p * ranks[2] * dimvals[2] - p
     num_ll1 = Int(dimvals[1] * (dimvals[1] + 1) / 2) - 1
     num_ll2 = Int(dimvals[2] * (dimvals[2] + 1) / 2)
 
@@ -13,18 +13,21 @@ aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
 bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * log(obs))
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
 
-function rank_selection(data, dimvals; iters=1000)
+function rank_selection(data, dimvals; iters=1000, pmax=1)
 
     cen_data = data .- mean(data, dims=2)
     obs = size(cen_data, 2)
-    ictable = fill(NaN, 5, prod(dimvals))
-    rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2]))
+    ictable = fill(NaN, 6, prod(dimvals) * pmax)
+    rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2], 1:pmax))
 
-    for i = 1:prod(dimvals)
-        #=@showprogress Threads.@threads for i = 1:prod(dimvals)=#
-        selected_rank = collect(rank_grid[i])
-        num_parameters = system_parameters(dimvals, selected_rank)
-        reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters)
+    #=for i = 1:prod(dimvals)=#
+    @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
+        selected_rank_lags = collect(rank_grid[i])
+        selected_rank = selected_rank_lags[1:2]
+        selected_lag = selected_rank_lags[3]
+
+        num_parameters = system_parameters(dimvals, selected_rank; p=selected_lag)
+        reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters, p=selected_lag)
         ll = -reg.res.minimum
         ictable[1, i] = aic(ll, num_parameters)
         #=ictable[2, i] = bic(ll, obs, dimvals, selected_rank)=#
@@ -32,6 +35,7 @@ function rank_selection(data, dimvals; iters=1000)
         ictable[3, i] = hqc(ll, num_parameters, obs)
         ictable[4, i] = selected_rank[1]
         ictable[5, i] = selected_rank[2]
+        ictable[6, i] = selected_lag
     end
 
     aicvec = argmin(ictable[1, :])
