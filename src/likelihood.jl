@@ -160,6 +160,7 @@ function loglike_calc(theta, resp, pred, dimvals, ranks; p=1)
     sigma1 = ll1 * ll1'
     sigma2 = ll2 * ll2'
     ll = kron(ll2, ll1)
+    perm_mat = kron(I(p), perm_matrix(dimvals, ranks))
 
     delta_star = delta_rot[(N1_r1+1):end, :]
     gamma_star = gamma_rot[(N2_r2+1):end, :]
@@ -167,7 +168,7 @@ function loglike_calc(theta, resp, pred, dimvals, ranks; p=1)
     pi_mat = create_pi(u3, u4, dimvals, ranks; p)
 
     obs = size(resp, 2)
-    omega = create_omega(delta_star, gamma_star, dimvals, ranks)
+    omega = create_omega(delta_star, gamma_star, dimvals, ranks) * perm_mat
     if p > 1
         omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat; ll)
         sparse_omega = sparse(omega_tilde)
@@ -316,7 +317,8 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     else
         perm_mat = perm_matrix(dimvals, ranks)
     end
-    perm_resp = (perm_mat*data)[:, 2:end]
+    #=perm_resp = (perm_mat*data)[:, 2:end]=#
+    perm_resp = data[:, 2:end]
     pred = data[:, 1:(end-1)]
     resp = perm_resp .- mean(perm_resp, dims=2)
 

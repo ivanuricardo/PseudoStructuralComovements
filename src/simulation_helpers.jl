@@ -23,7 +23,7 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, coef_scale = 1)
         delta .= vcat(I, delta_star)
         gamma_star = randn(ranks[2], dimvals[2] - ranks[2])
         gamma .= vcat(I, gamma_star)
-        omega = create_omega(delta_star, gamma_star, dimvals, ranks)
+        omega_star = create_omega(delta_star, gamma_star, dimvals, ranks)
         u3_scale = fill(NaN, p)
         count = 0
 
@@ -44,11 +44,14 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, coef_scale = 1)
         pi_mat = create_pi(u3, u4, dimvals, ranks; p)
         perm_mat = perm_matrix(dimvals, ranks)
         if p == 1
-            A .= inv(omega * perm_mat) * pi_mat
+            # given Ω^* P y_t = Π y_{t-1} + Ω^* P e_t
+            # A^* = inv(Ω^*) Π = inv(Ω P') Π 
+            # A = P' Ω^* Π to obtain y_t = A y_{t-1} + e_t
+            A .= perm_mat' * inv(omega_star) * pi_mat
         else
-            omega_tilde, pi_tilde = make_companion(omega, pi_mat)
+            omega_tilde, pi_tilde = make_companion(omega_star, pi_mat)
             large_perm = kron(I(p), perm_mat)
-            A .= inv(omega_tilde * large_perm) * pi_tilde
+            A .= large_perm' * inv(omega_tilde) * pi_tilde
         end
         coef_eigs = round.(sort(abs.(eigvals(A)), rev=true), digits=6)
         last_idx = findlast(!iszero, coef_eigs)

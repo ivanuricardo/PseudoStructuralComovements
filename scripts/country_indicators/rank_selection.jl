@@ -14,7 +14,7 @@ pdata = permutedims(matdata, (3, 1, 2))
 dimvals = collect(size(matdata[:, :, 1]))
 cen_data = vecdata .- mean(vecdata, dims=2)
 
-smallicest = rank_selection(cen_data, dimvals; iters=1000)
+smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=2)
 
 small_bench = R"""
 d1 = $dimvals[1]
@@ -31,9 +31,21 @@ sd <- matAR.RR.se(est$A1, est$A2, 3, 1, method = "RRMLE", Sigma1=est$Sig1, Sigma
 @rget est
 @rget sd
 
+
+
+omega = res3.omega
+sigma1 = res3.sigma1_est
+sigma2 = res3.sigma2_est
+kron_term = kron(sigma2, sigma1)
+eigvals(kron_term)
+mid_term = inv(omega * kron(sigma2, sigma1) * omega')
+eigvals(mid_term)
+
+
+
 res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000)
 res2 = comovement_reg(cen_data, dimvals, [2, 1]; iters=1000)
-res3 = comovement_reg(cen_data, dimvals, [3, 1]; iters=1000)
+jres3 = comovement_reg(cen_data, dimvals, [3, 1]; iters=1000)
 res4 = comovement_reg(cen_data, dimvals, [4, 1]; iters=1000)
 res5 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000)
 res6 = comovement_reg(cen_data, dimvals, [2, 2]; iters=1000)

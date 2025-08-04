@@ -30,7 +30,6 @@ function rank_selection(data, dimvals; iters=1000, pmax=1)
         reg = comovement_reg(cen_data, dimvals, selected_rank; iters=iters, p=selected_lag)
         ll = -reg.res.minimum
         ictable[1, i] = aic(ll, num_parameters)
-        #=ictable[2, i] = bic(ll, obs, dimvals, selected_rank)=#
         ictable[2, i] = bic(ll, num_parameters, obs)
         ictable[3, i] = hqc(ll, num_parameters, obs)
         ictable[4, i] = selected_rank[1]

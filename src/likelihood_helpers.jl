@@ -10,6 +10,8 @@ function blockvec(A::AbstractMatrix, dimvals, ranks)
     return vcat(vec(A1), vec(A2), vec(A3), vec(A4))
 end
 
+# Creates the permutation matrix P such that
+# Ω P' P y_t works out
 function perm_matrix(dimvals, ranks)
     seq = reshape(1:prod(dimvals), dimvals[1], dimvals[2])
     res = I(prod(dimvals))
