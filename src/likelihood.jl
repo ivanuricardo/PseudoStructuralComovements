@@ -327,7 +327,6 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     first_neg_eig_check = check_neg_eigs(td, res)
     push!(all_results, (res, td, first_neg_eig_check))
 
-    # Subsequent attempts if needed
     while res.g_residual > 1e-02 || first_neg_eig_check
         res, td = main_algorithm(data, resp, pred, dimvals, ranks; iters, tol, num_starts, num_selected, p)
         next_neg_eig_check = check_neg_eigs(td, res)

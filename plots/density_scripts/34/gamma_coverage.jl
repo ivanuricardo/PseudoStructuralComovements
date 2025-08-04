@@ -53,8 +53,8 @@ for (j, T) in enumerate(sample_sizes)
         title=T,
         ylabel="Coverage (%)",
         xticks=(x_positions, delta_ranks),
-        limits=(nothing, (90, 100)),
-        yticks=90:2:100,
+        limits=(nothing, (0, 100)),
+        yticks=0:20:100,
         backgroundcolor=:transparent,
     )
 
@@ -71,5 +71,7 @@ for (j, T) in enumerate(sample_sizes)
         axislegend(ax; position=:rt, backgroundcolor=:transparent)
     end
 end
+
+fig
 
 save("../../density_plots/34/gamma_coverage_plot.png", fig)
