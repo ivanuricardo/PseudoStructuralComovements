@@ -8,7 +8,7 @@ function isstable(A, maxeigen)
     return stab_cond < maxeigen
 end
 
-function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
+function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, coef_scale = 1)
 
     A = fill(NaN, p * prod(dimvals), p * prod(dimvals))
     delta = fill(NaN, dimvals[1], dimvals[1] - ranks[1])
@@ -30,7 +30,7 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
         for i in 1:dimvals[1]:(p*dimvals[1])
             count += 1
             u3_range = i:i+dimvals[1]-1
-            u3_partial = randn(dimvals[1], ranks[1])
+            u3_partial = coef_scale .* randn(dimvals[1], ranks[1])
             u3_scale[count] = u3_partial[1, 1]
             u3[u3_range, :] .= u3_partial / u3_scale[count]
         end
@@ -38,7 +38,7 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
         for i in 1:dimvals[2]:(p*dimvals[2])
             count += 1
             u4_range = i:i+dimvals[2]-1
-            u4_partial = randn(dimvals[2], ranks[2])
+            u4_partial = coef_scale .* randn(dimvals[2], ranks[2])
             u4[u4_range, :] = u4_partial * u3_scale[count]
         end
         pi_mat = create_pi(u3, u4, dimvals, ranks; p)
@@ -50,16 +50,19 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9)
             large_perm = kron(I(p), perm_mat)
             A .= inv(omega_tilde * large_perm) * pi_tilde
         end
-        coef_eigs = round.(sort(abs.(eigvals(A)), rev=true), digits=8)
+        coef_eigs = round.(sort(abs.(eigvals(A)), rev=true), digits=6)
         last_idx = findlast(!iszero, coef_eigs)
 
         if isstable(A, maxeigen) && (coef_eigs[last_idx] > 0.4)
             break
+        elseif stabit > 1e4
+            coef_scale *= 0.1
+            stabit = 0
         end
     end
 
     sorted_eigs = sort(abs.(eigvals(A)), rev=true)
-    return (; A, delta, gamma, u3, u4, stabit, sorted_eigs)
+    return (; A, delta, gamma, u3, u4, stabit, sorted_eigs, coef_scale)
 end
 
 function simulate_rrmar_data(
