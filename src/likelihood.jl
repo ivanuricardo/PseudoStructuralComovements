@@ -89,6 +89,7 @@ end
 
 function init_alg(data, dimvals, ranks; p=1)
 
+    data = data[1:prod(dimvals), :]
     obs = size(data, 2)
     N1_r1 = dimvals[1] - ranks[1]
     N2_r2 = dimvals[2] - ranks[2]

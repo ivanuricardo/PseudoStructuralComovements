@@ -30,7 +30,7 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, coef_scale = 1)
         for i in 1:dimvals[1]:(p*dimvals[1])
             count += 1
             u3_range = i:i+dimvals[1]-1
-            u3_partial = coef_scale .* randn(dimvals[1], ranks[1])
+            u3_partial = randn(dimvals[1], ranks[1])
             u3_scale[count] = u3_partial[1, 1]
             u3[u3_range, :] .= u3_partial / u3_scale[count]
         end
@@ -52,6 +52,9 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, coef_scale = 1)
         end
         coef_eigs = round.(sort(abs.(eigvals(A)), rev=true), digits=6)
         last_idx = findlast(!iszero, coef_eigs)
+        if isnothing(last_idx)
+            @error "No stable coefficients found!"
+        end
 
         if isstable(A, maxeigen) && (coef_eigs[last_idx] > 0.4)
             break
