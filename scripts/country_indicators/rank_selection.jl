@@ -14,7 +14,10 @@ pdata = permutedims(matdata, (3, 1, 2))
 dimvals = collect(size(matdata[:, :, 1]))
 cen_data = vecdata .- mean(vecdata, dims=2)
 
-smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=2)
+smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=1)
+# AIC selects 3,5,1
+# BIC selects 2,5,1
+# HQC selects 3,5,1
 
 small_bench = R"""
 d1 = $dimvals[1]
@@ -33,9 +36,9 @@ sd <- matAR.RR.se(est$A1, est$A2, 3, 1, method = "RRMLE", Sigma1=est$Sig1, Sigma
 
 
 
-omega = res3.omega
-sigma1 = res3.sigma1_est
-sigma2 = res3.sigma2_est
+omega = res18.omega
+sigma1 = res18.sigma1_est
+sigma2 = res18.sigma2_est
 det(sigma1)
 det(sigma2)
 kron_term = kron(sigma2, sigma1)
@@ -43,8 +46,34 @@ det(kron_term)
 eigvals(kron_term)
 mid_term = inv(omega * kron(sigma2, sigma1) * omega')
 eigvals(mid_term)
+perm_mat = perm_matrix(dimvals, [2,5])
 
 std(cen_data, dims = 2)
+
+function system_parameters(dimvals, ranks; p=1)
+    first_term = ranks[1] * (dimvals[1] - ranks[1])
+    second_term = ranks[2] * (dimvals[2] - ranks[2])
+    third_term = p * ranks[1] * dimvals[1] + p * ranks[2] * dimvals[2] - p
+    num_ll1 = Int(dimvals[1] * (dimvals[1] + 1) / 2) - 1
+    num_ll2 = Int(dimvals[2] * (dimvals[2] + 1) / 2)
+
+    return first_term + second_term + num_ll1 + num_ll2 + third_term - 1
+end
+aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
+bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars2 * log(obs))
+hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
+ll1 = -res3.res.minimum
+ll2 = -res20.res.minimum
+ll3 = -res1.res.minimum
+numpars1 = system_parameters(dimvals, [3,1])
+numpars2 = system_parameters(dimvals, [4,5])
+numpars3 = system_parameters(dimvals, [4,5]; p=2)
+obs = 99
+bic1 = bic(ll1, numpars1, obs)
+bic2 = bic(ll2, numpars2, obs)
+bic3 = bic(ll3, numpars2, obs)
+
+numpars3 = system_parameters([3,4], [3,4]; p=3)
 
 
 

@@ -53,13 +53,10 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, coef_scale = 1)
             large_perm = kron(I(p), perm_mat)
             A .= large_perm' * inv(omega_tilde) * pi_tilde
         end
-        coef_eigs = round.(sort(abs.(eigvals(A)), rev=true), digits=6)
-        last_idx = findlast(!iszero, coef_eigs)
-        if isnothing(last_idx)
-            @error "No stable coefficients found!"
-        end
+        coef_eigs = sort(abs.(eigvals(A)), rev=true)
+        last_coef = coef_eigs[prod(ranks) * p]
 
-        if isstable(A, maxeigen) && (coef_eigs[last_idx] > 0.4)
+        if isstable(A, maxeigen) && (last_coef > 0.4)
             break
         elseif stabit > 1e4
             coef_scale *= 0.1
@@ -103,11 +100,21 @@ function simulate_rrmar_data(
         mat_errs = rand(d, obs)
         vec_errs = hcat([vec(mat_errs[i]) for i in eachindex(mat_errs)]...)
 
+        if p == 1
+            for i = 2:obs
+                pre_data[:, i] .= coef * pre_data[:, i-1] + vec_errs[:, i]
+            end
+            data = pre_data[:, (burnin+1):end]
+            return (; data, coef, sigma1, sigma2)
+        end
+
         for i = 2:obs
-            pre_data[:, i] .= coef * pre_data[:, i-1] + vec_errs[:, i]
+            vec_epsilon = vcat(vec(rand(d)), zeros(prod(dimvals) * (p - 1)))
+            pre_data[:, i] .= coef * pre_data[:, i-1] + vec_epsilon
         end
         data = pre_data[:, (burnin+1):end]
         return (; data, coef, sigma1, sigma2)
+
     else
         d = MultivariateNormal(zeros(dimvals[1] * dimvals[2]), diagerr)
         if p == 1

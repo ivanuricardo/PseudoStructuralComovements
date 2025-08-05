@@ -6,7 +6,7 @@ dimvals = [3, 4]
 true_ranks = [2, 2]
 under_rank = [2, 1]
 over_rank = [2, 3]
-p = 2
+p = 3
 
 sims = 250
 burnin = 50
@@ -26,8 +26,8 @@ correct_cov = fill(NaN, 2, sims)
 under_cov = fill(NaN, 2, sims)
 over_cov = fill(NaN, 2, sims)
 
-@showprogress Threads.@threads for i = 1:sims
-    data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin, p)
+@showprogress Threads.@threads for i = 1:simsdimvals
+    data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin, p, matrix_err=true)
     cen_data = data.data .- mean(data.data, dims=2)
 
     correct_reg = comovement_reg(cen_data, dimvals, true_ranks; iters=1000, p)

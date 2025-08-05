@@ -12,9 +12,6 @@ burnin = 50
 obs = 100 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_rank)
-coef.sorted_eigs
-coef.stabit
-
 delta_true = coef.delta
 gamma_true = coef.gamma
 u3_true = coef.u3

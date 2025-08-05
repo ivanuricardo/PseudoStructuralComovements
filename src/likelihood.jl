@@ -88,6 +88,7 @@ function rand_init(dimvals, ranks; p=1)
 end
 
 function init_alg(data, dimvals, ranks; p=1)
+    # TODO fix for p = 3
 
     data = data[1:prod(dimvals), :]
     obs = size(data, 2)
@@ -168,13 +169,13 @@ function loglike_calc(theta, resp, pred, dimvals, ranks; p=1)
     pi_mat = create_pi(u3, u4, dimvals, ranks; p)
 
     obs = size(resp, 2)
-    omega = create_omega(delta_star, gamma_star, dimvals, ranks) * perm_mat
+    omega = create_omega(delta_star, gamma_star, dimvals, ranks)
     if p > 1
         omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat; ll)
-        sparse_omega = sparse(omega_tilde)
+        sparse_omega = sparse(omega_tilde * perm_mat)
         sparse_pi = sparse(pi_tilde)
     else
-        sparse_omega = sparse(omega)
+        sparse_omega = sparse(omega * perm_mat)
         sparse_pi = sparse(pi_mat)
     end
 

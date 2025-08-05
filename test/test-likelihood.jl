@@ -33,6 +33,20 @@
     gamma_star = gamma[(N2_r2+1):end, :]
     theta_reconstructed = pack_params(delta_star, gamma_star, u3, u4, ll1, ll2; p)
     @test norm(theta_reconstructed - theta) ≈ 0
+
+    # Testing with 3 lags
+    p = 3
+    theta = randn(47)
+
+    delta, gamma, u3, u4, ll1, ll2 = unpack_params(theta, dimvals, ranks; p)
+    @test size(u3) == (p * dimvals[1], ranks[1])
+    @test size(u4) == (p * dimvals[2], ranks[2])
+
+    # repacking again should give me the same
+    delta_star = delta[(N1_r1+1):end, :]
+    gamma_star = gamma[(N2_r2+1):end, :]
+    theta_reconstructed = pack_params(delta_star, gamma_star, u3, u4, ll1, ll2; p)
+    @test norm(theta_reconstructed - theta) ≈ 0
 end
 
 @testset "check permutation matrix" begin
