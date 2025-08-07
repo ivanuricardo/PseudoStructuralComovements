@@ -14,10 +14,15 @@ pdata = permutedims(matdata, (3, 1, 2))
 dimvals = collect(size(matdata[:, :, 1]))
 cen_data = vecdata .- mean(vecdata, dims=2)
 
-smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=1)
+smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=3)
 # AIC selects 3,5,1
 # BIC selects 2,5,1
 # HQC selects 3,5,1
+
+# AIC selects 2,3,1
+# BIC selects 2,1,1
+# HQC selects 2,2,1
+
 
 small_bench = R"""
 d1 = $dimvals[1]
@@ -104,4 +109,11 @@ res.delta_stderr
 res.gamma_est
 res.gamma_stderr
 
+s1 = res2.sigma1_est ./ norm(res2.sigma1_est)
+s2 = res2.sigma2_est .* norm(res2.sigma1_est)
 
+res2.delta_est
+res2.delta_stderr
+
+res2.gamma_est
+res2.gamma_stderr

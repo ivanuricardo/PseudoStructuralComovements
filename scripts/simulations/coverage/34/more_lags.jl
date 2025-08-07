@@ -3,14 +3,14 @@ using DrWatson
 Random.seed!(20250530)
 
 dimvals = [3, 4]
-true_ranks = [2, 2]
+true_ranks = [3, 4]
 under_rank = [2, 1]
 over_rank = [2, 3]
 p = 3
 
 sims = 250
 burnin = 50
-obs = 100 + burnin
+obs = 90 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_ranks; p)
 delta_true = coef.delta
@@ -28,16 +28,21 @@ over_cov = fill(NaN, 2, sims)
 
 @showprogress Threads.@threads for i = 1:simsdimvals
     data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin, p, matrix_err=true)
-    # Still simulating p=1 data, or the estimate pretends it is p=1
     cen_data = data.data .- mean(data.data, dims=2)
 
-    correct_reg = comovement_reg(cen_data, dimvals, true_ranks; iters=1000, p)
-    correct_reg2 = comovement_reg(cen_data[:, 2:end], dimvals, true_ranks; iters=1000, p=2)
-    correct_reg3 = comovement_reg(cen_data[:, 3:end], dimvals, true_ranks; iters=1000, p=1)
+    @time correct_reg = comovement_reg(cen_data, dimvals, true_ranks; iters=1000, p)
+    @time correct_reg2 = comovement_reg(cen_data[:, 2:end], dimvals, true_ranks; iters=1000, p=2)
+    @time correct_reg3 = comovement_reg(cen_data[:, 3:end], dimvals, true_ranks; iters=1000, p=1)
 
     correct_reg.res.minimum
     correct_reg2.res.minimum
     correct_reg3.res.minimum
+    numpars1 = system_parameters(dimvals, true_ranks; p=3)
+    numpars2 = system_parameters(dimvals, true_ranks; p=2)
+    numpars3 = system_parameters(dimvals, true_ranks; p=1)
+    bic1 = bic(-correct_reg.res.minimum, numpars1, 89)
+    bic2 = bic(-correct_reg2.res.minimum, numpars2, 89)
+    bic3 = bic(-correct_reg3.res.minimum, numpars3, 89)
 
 
 
