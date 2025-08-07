@@ -50,8 +50,8 @@ for (j, T) in enumerate(sample_sizes)
         title=T,
         ylabel="Coverage (%)",
         xticks=(x_positions, gamma_ranks),
-        limits=(nothing, (70, 100)),    # now from 80% up to 100%
-        yticks=70:5:100,                # ticks every 5%
+        limits=(nothing, (80, 100)),    # now from 80% up to 100%
+        yticks=80:5:100,                # ticks every 5%
         backgroundcolor=:transparent,
     )
 

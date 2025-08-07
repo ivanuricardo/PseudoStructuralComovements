@@ -28,9 +28,44 @@ over_cov = fill(NaN, 2, sims)
 
 @showprogress Threads.@threads for i = 1:simsdimvals
     data = simulate_rrmar_data(dimvals, true_ranks, obs; A=coef, burnin, p, matrix_err=true)
+    # Still simulating p=1 data, or the estimate pretends it is p=1
     cen_data = data.data .- mean(data.data, dims=2)
 
     correct_reg = comovement_reg(cen_data, dimvals, true_ranks; iters=1000, p)
+    correct_reg2 = comovement_reg(cen_data[:, 2:end], dimvals, true_ranks; iters=1000, p=2)
+    correct_reg3 = comovement_reg(cen_data[:, 3:end], dimvals, true_ranks; iters=1000, p=1)
+
+    correct_reg.res.minimum
+    correct_reg2.res.minimum
+    correct_reg3.res.minimum
+
+
+
+
+
+
+    omega = correct_reg3.omega
+    pi_mat = correct_reg2.pi_mat
+    ll = round.(I(prod(dimvals)) .+ 0.00001 .* randn(), digits = 8)
+
+    omega_tilde, pi_tilde, ll = make_companion(omega, pi_mat; ll)
+    sparse_omega = sparse(omega_tilde * perm_mat)
+    sparse_pi = sparse(pi_tilde)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     over_reg = comovement_reg(cen_data, dimvals, over_rank; iters=1000, p)
     under_reg = comovement_reg(cen_data, dimvals, under_rank; iters=1000, p)
 

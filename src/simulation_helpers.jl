@@ -50,7 +50,8 @@ function generate_rrmar_coef(dimvals, ranks; p=1, maxeigen=0.9, coef_scale = 1)
             A .= perm_mat' * inv(omega_star) * pi_mat
         else
             omega_tilde, pi_tilde = make_companion(omega_star, pi_mat)
-            large_perm = kron(I(p), perm_mat)
+            z = zeros(prod(dimvals), (p-1) * prod(dimvals))
+            large_perm = [ perm_matrix(dimvals, ranks) z; z' I((p-1) * prod(dimvals)) ]
             A .= large_perm' * inv(omega_tilde) * pi_tilde
         end
         coef_eigs = sort(abs.(eigvals(A)), rev=true)
@@ -112,7 +113,7 @@ function simulate_rrmar_data(
             vec_epsilon = vcat(vec(rand(d)), zeros(prod(dimvals) * (p - 1)))
             pre_data[:, i] .= coef * pre_data[:, i-1] + vec_epsilon
         end
-        data = pre_data[:, (burnin+1):end]
+        data = pre_data[1:prod(dimvals), (burnin+1):end]
         return (; data, coef, sigma1, sigma2)
 
     else
@@ -131,7 +132,7 @@ function simulate_rrmar_data(
             vec_epsilon = vcat(rand(d), zeros(prod(dimvals) * (p - 1)))
             pre_data[:, i] .= coef * pre_data[:, i-1] + vec_epsilon
         end
-        data = pre_data[:, (burnin+1):end]
+        data = pre_data[1:prod(dimvals), (burnin+1):end]
         sigma = copy(diagerr)
         return (; data, coef, sigma)
     end

@@ -42,16 +42,29 @@ function make_companion(omega::AbstractMatrix{T}, pi_mat::AbstractMatrix{T}; ll:
     return (; omega_tilde, pi_tilde, ll_tilde)
 end
 
-function companion_data(data, p)
-    p_adj = p - 1
-    k, obs = size(data)
-    obs_eff = obs - p_adj
-    Z = Matrix{Float64}(undef, k * (p_adj + 1), obs_eff)
+"""
+    companion_data(data::AbstractMatrix{T}, p::Int=2) where T
 
-    for i in 0:p_adj
-        Z[(i*k+1):(i+1)*k, :] = data[:, (p_adj-i+1):end-i]
+Given `data` of size (k × T), returns the companion‐form state matrix
+of size (k*p × (T - p)), whose t-th column is
+  [data[:, t+p];
+   data[:, t+p-1];
+   …;
+   data[:, t+1]]
+for t = 1:(T-p).
+"""
+function companion_data(data::AbstractMatrix{T}, p::Int=2) where T
+    k, Ttotal = size(data)
+    N = Ttotal - p + 1             # 100 - 2 + 1 = 99
+    @assert N > 0 "Need T > p, got T=$Ttotal, p=$p"
+    state = Array{T}(undef, k*p, N)
+    for t in 1:N
+        for i in 1:p
+            # pick out y_{t+p-i}  (so at t=1 you get y_p, ... y_1)
+            state[((i-1)*k+1):(i*k), t] = data[:, t + p - i]
+        end
     end
-    return Z
+    return state
 end
 
 function insertk!(v::AbstractVector, k::Int; val=1)

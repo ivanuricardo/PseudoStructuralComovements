@@ -63,9 +63,7 @@ end
 
 function pack_params(delta_star, gamma_star, u3, u4, ll1, ll2; p=1)
     n1, n2 = size(u3)
-    true_n1 = n1 ÷ p
-    vec_u3 = vecb(u3, true_n1)
-    removek!(vec_u3, true_n1 * n2 - 1)
+    vec_u3 = filter(x -> !isapprox(x, 1.0; atol=1e-12), vec(u3))
     vec_ll1 = vech(ll1)
     deleteat!(vec_ll1, 1)
     vec_ll2 = vech(ll2)
@@ -87,8 +85,19 @@ function rand_init(dimvals, ranks; p=1)
 
 end
 
+function stack_with_random(A::AbstractMatrix{T}, p::Integer) where T<:Real
+    N, r = size(A)
+    mats = Vector{Matrix{T}}(undef, p+1)
+    mats[1] = A
+    for i in 1:p
+        B = randn(T, N, r)
+        B[1,1] = A[1,1]       # enforce the (1,1)–entry
+        mats[i+1] = B
+    end
+    return vcat(mats...)      # stack them all vertically
+end
+
 function init_alg(data, dimvals, ranks; p=1)
-    # TODO fix for p = 3
 
     data = data[1:prod(dimvals), :]
     obs = size(data, 2)
@@ -141,12 +150,8 @@ function init_alg(data, dimvals, ranks; p=1)
     ll2_rot = ll2 * ss
 
     if p != 1
-        u3_bot = randn(dimvals[1], ranks[1])
-        s_alt = u3_bot[1, 1]
-        u3_bot = copy(u3_bot) / s_alt
-        u4_bot = randn(dimvals[2], ranks[2]) * s_alt
-        u3 = vcat(u3, u3_bot)
-        u4 = vcat(u4, u4_bot)
+        u3 = stack_with_random(u3, p-1)
+        u4 = stack_with_random(u4, p-1)
     end
 
     return pack_params(delta_star, gamma_star, u3, u4, ll1_rot, ll2_rot; p)
@@ -161,7 +166,12 @@ function loglike_calc(theta, resp, pred, dimvals, ranks; p=1)
     sigma1 = ll1 * ll1'
     sigma2 = ll2 * ll2'
     ll = kron(ll2, ll1)
-    perm_mat = kron(I(p), perm_matrix(dimvals, ranks))
+    if p == 1
+        perm_mat = perm_matrix(dimvals, ranks)
+    else
+        z = zeros(prod(dimvals), (p-1) * prod(dimvals))
+        perm_mat = [ perm_matrix(dimvals, ranks) z; z' I((p-1) * prod(dimvals)) ]
+    end
 
     delta_star = delta_rot[(N1_r1+1):end, :]
     gamma_star = gamma_rot[(N2_r2+1):end, :]
@@ -191,7 +201,7 @@ function loglike_calc(theta, resp, pred, dimvals, ranks; p=1)
 
     sse = 0.0
 
-    for i = 2:obs
+    for i = 1:obs
         yt = @view resp[:, i]
         yt_m1 = @view pred[:, i]
         resid = sparse_omega * yt - sparse_pi * yt_m1
@@ -310,15 +320,12 @@ end
 
 function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=100, num_selected=10, p=1)
 
-    if p != 1
-        if prod(dimvals) * p != size(data, 1)
-            data = companion_data(data, p)
-        end
-        perm_mat = kron(I(p), perm_matrix(dimvals, ranks))
-    else
-        perm_mat = perm_matrix(dimvals, ranks)
+    nrows = size(data, 1)
+    expected = prod(dimvals) * p
+    if p != 1 && expected != nrows
+        data = companion_data(data, p)
     end
-    #=perm_resp = (perm_mat*data)[:, 2:end]=#
+
     perm_resp = data[:, 2:end]
     pred = data[:, 1:(end-1)]
     resp = perm_resp .- mean(perm_resp, dims=2)
