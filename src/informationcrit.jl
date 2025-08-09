@@ -6,7 +6,7 @@ function system_parameters(dimvals, ranks; p=1)
     num_ll1 = Int(dimvals[1] * (dimvals[1] + 1) / 2) - 1
     num_ll2 = Int(dimvals[2] * (dimvals[2] + 1) / 2)
 
-    return first_term + second_term + num_ll1 + num_ll2 + third_term - 1
+    return first_term + second_term + num_ll1 + num_ll2 + third_term
 end
 
 aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)

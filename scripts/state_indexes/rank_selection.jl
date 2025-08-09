@@ -1,17 +1,16 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
 Random.seed!(20250723)
-using RCall
+using RCall, XLSX
 
 R"""
 source("r_helpers.R")
 """
 
-matdata = load(datadir("./country_indicators/globaldata.jld2"), "matdata");
-vecdata = tenmat(matdata, row=[1, 2])
-pdata = permutedims(matdata, (3, 1, 2))
+matdata = XLSX.readdata(datadir("./state_indexes/reguib_northcentral.xlsx"), "Sheet1!A2:S459")
+vecdata = Float64.(matdata[:, 2:end])'
 
-dimvals = collect(size(matdata[:, :, 1]))
+dimvals = [2,9]
 cen_data = vecdata .- mean(vecdata, dims=2)
 
 smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=4)
@@ -85,8 +84,8 @@ numpars3 = system_parameters([3,4], [3,4]; p=3)
 
 
 
-res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000, p=4)
-res2 = comovement_reg(cen_data, dimvals, [2, 1]; iters=1000)
+res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000)
+res2 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000)
 res3 = comovement_reg(cen_data, dimvals, [3, 1]; iters=1000)
 res4 = comovement_reg(cen_data, dimvals, [4, 1]; iters=1000)
 res5 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000)

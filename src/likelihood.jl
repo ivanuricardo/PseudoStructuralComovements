@@ -1,3 +1,9 @@
+function perturb!(A; digs=10)
+    @inbounds for i in eachindex(A)
+        A[i] += 10^(-float(digs)) * randn()
+    end
+    return A
+end
 
 function unpack_params(theta, dimvals, ranks; p=1)
     num_delta = ranks[1] * (dimvals[1] - ranks[1])
@@ -126,6 +132,9 @@ function init_alg(data, dimvals, ranks; p=1)
     end
 
     u3_new_prime = u1_est[(N1_r1+1):end, :] * u3_est'
+    if dimvals[1] == ranks[1]
+        perturb!(u3_new_prime)
+    end
     u3 = u3_new_prime / u3_new_prime[1]
     u3 = copy(u3')
 
@@ -325,6 +334,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     if p != 1 && expected != nrows
         data = companion_data(data, p)
     end
+    data = data .- mean(data, dims = 2)
 
     perm_resp = data[:, 2:end]
     pred = data[:, 1:(end-1)]
