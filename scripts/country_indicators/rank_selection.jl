@@ -14,7 +14,7 @@ pdata = permutedims(matdata, (3, 1, 2))
 dimvals = collect(size(matdata[:, :, 1]))
 cen_data = vecdata .- mean(vecdata, dims=2)
 
-smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=3)
+smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=4)
 # AIC selects 3,5,1
 # BIC selects 2,5,1
 # HQC selects 3,5,1
@@ -64,6 +64,9 @@ function system_parameters(dimvals, ranks; p=1)
 
     return first_term + second_term + num_ll1 + num_ll2 + third_term - 1
 end
+
+
+
 aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
 bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars2 * log(obs))
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
@@ -82,7 +85,7 @@ numpars3 = system_parameters([3,4], [3,4]; p=3)
 
 
 
-res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000)
+res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000, p=4)
 res2 = comovement_reg(cen_data, dimvals, [2, 1]; iters=1000)
 res3 = comovement_reg(cen_data, dimvals, [3, 1]; iters=1000)
 res4 = comovement_reg(cen_data, dimvals, [4, 1]; iters=1000)
@@ -96,12 +99,12 @@ res11 = comovement_reg(cen_data, dimvals, [3, 3]; iters=1000)
 res12 = comovement_reg(cen_data, dimvals, [4, 3]; iters=1000)
 res13 = comovement_reg(cen_data, dimvals, [1, 4]; iters=1000)
 res14 = comovement_reg(cen_data, dimvals, [2, 4]; iters=1000)
-res15 = comovement_reg(cen_data, dimvals, [3, 4]; iters=1000)
+res15 = comovement_reg(cen_data, dimvals, [3, 4]; iters=1000, p=4)
 res16 = comovement_reg(cen_data, dimvals, [4, 4]; iters=1000)
 res17 = comovement_reg(cen_data, dimvals, [1, 5]; iters=1000)
 res18 = comovement_reg(cen_data, dimvals, [2, 5]; iters=1000)
 res19 = comovement_reg(cen_data, dimvals, [3, 5]; iters=1000)
-res20 = comovement_reg(cen_data, dimvals, [4, 5]; iters=1000)
+res20 = comovement_reg(cen_data, dimvals, [4, 5]; iters=1000, p=4)
 res.res.minimum
 
 res.delta_est

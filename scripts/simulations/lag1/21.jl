@@ -7,7 +7,7 @@ source("r_helpers.R")
 Random.seed!(20250723)
 
 sims = 100
-dimvals = [3, 6]
+dimvals = [3, 4]
 ranks = [2, 1]
 snr = 0.7
 
@@ -99,13 +99,14 @@ A = generate_rrmar_coef(dimvals, ranks)
     under_medaic21[:, s] .= med_clipped_icest.aic_sel[1:2]
     under_medbic21[:, s] .= med_clipped_icest.bic_sel[1:2]
 
+
     over_med_clipped_icest = check_rank(medicest.ictable, 3.0)
     over_medaic21[:, s] .= over_med_clipped_icest.aic_sel[1:2]
     over_medbic21[:, s] .= over_med_clipped_icest.bic_sel[1:2]
 
 end
 
-save(datadir("threebysix/21_results.jld2"), Dict(
+save(datadir("threebyfour/21_results.jld2"), Dict(
     "smallaic" => smallaic21,
     "smallbic" => smallbic21,
     "smallbic_bench" => smallbic21_bench,
@@ -114,7 +115,7 @@ save(datadir("threebysix/21_results.jld2"), Dict(
     "medbic_bench" => medbic21_bench,
 ))
 
-save(datadir("threebysix/under_21_results.jld2"), Dict(
+save(datadir("threebyfour/under_21_results.jld2"), Dict(
     "under_smallaic" => under_smallaic21,
     "under_smallbic" => under_smallbic21,
     "under_smallbic_bench" => under_smallbic21_bench,
@@ -123,7 +124,7 @@ save(datadir("threebysix/under_21_results.jld2"), Dict(
     "under_medbic_bench" => under_medbic21_bench,
 ))
 
-save(datadir("threebysix/over_21_results.jld2"), Dict(
+save(datadir("threebyfour/over_21_results.jld2"), Dict(
     "over_smallaic" => over_smallaic21,
     "over_smallbic" => over_smallbic21,
     "over_smallbic_bench" => over_smallbic21_bench,
