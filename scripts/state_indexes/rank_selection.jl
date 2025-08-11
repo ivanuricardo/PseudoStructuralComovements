@@ -13,14 +13,7 @@ vecdata = Float64.(matdata[:, 2:end])'
 dimvals = [2,9]
 cen_data = vecdata .- mean(vecdata, dims=2)
 
-smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=4)
-# AIC selects 3,5,1
-# BIC selects 2,5,1
-# HQC selects 3,5,1
-
-# AIC selects 2,3,1
-# BIC selects 2,1,1
-# HQC selects 2,2,1
+icest = rank_selection(cen_data, dimvals; iters=1000, pmax=3)
 
 
 small_bench = R"""
@@ -69,42 +62,88 @@ end
 aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
 bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars2 * log(obs))
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
+
 ll1 = -res1.res.minimum
 ll2 = -res2.res.minimum
-ll3 = -res15.res.minimum
-numpars1 = system_parameters(dimvals, [1,1])
-numpars2 = system_parameters(dimvals, [2,1])
-numpars3 = system_parameters(dimvals, [3,4]; p=4)
-obs = 99
+ll3 = -res3.res.minimum
+ll4 = -res4.res.minimum
+ll5 = -res5.res.minimum
+ll6 = -res6.res.minimum
+ll7 = -res7.res.minimum
+ll8 = -res8.res.minimum
+ll9 = -res9.res.minimum
+ll10 = -res10.res.minimum
+ll11 = -res11.res.minimum
+ll12 = -res12.res.minimum
+ll13 = -res13.res.minimum
+ll14 = -res14.res.minimum
+ll15 = -res15.res.minimum
+ll16 = -res16.res.minimum
+ll17 = -res17.res.minimum
+ll18 = -res18.res.minimum
+
+
+numpars1 = system_parameters(dimvals, [1, 1]; p=2)
+numpars2 = system_parameters(dimvals, [2, 1]; p=2)
+numpars3 = system_parameters(dimvals, [1, 2]; p=2)
+numpars4 = system_parameters(dimvals, [2, 2]; p=2)
+numpars5 = system_parameters(dimvals, [1, 3]; p=2)
+numpars6 = system_parameters(dimvals, [2, 3]; p=2)
+numpars7 = system_parameters(dimvals, [1, 4]; p=2)
+numpars8 = system_parameters(dimvals, [2, 4]; p=2)
+numpars9 = system_parameters(dimvals, [1, 5]; p=2)
+numpars10 = system_parameters(dimvals, [2,5]; p=2)
+numpars11 = system_parameters(dimvals, [1,6]; p=2)
+numpars12 = system_parameters(dimvals, [2,6]; p=2)
+numpars13 = system_parameters(dimvals, [1,7]; p=2)
+numpars14 = system_parameters(dimvals, [2,7]; p=2)
+numpars15 = system_parameters(dimvals, [1,8]; p=2)
+numpars16 = system_parameters(dimvals, [2,8]; p=2)
+numpars17 = system_parameters(dimvals, [1,9]; p=2)
+numpars18 = system_parameters(dimvals, [2,9]; p=2)
+
+obs = 457
 bic1 = bic(ll1, numpars1, obs)
 bic2 = bic(ll2, numpars2, obs)
-bic3 = bic(ll3, numpars2, obs)
+bic3 = bic(ll3, numpars3, obs)
+bic4 = bic(ll4, numpars4, obs)
+bic5 = bic(ll5, numpars5, obs)
+bic6 = bic(ll6, numpars6, obs)
+bic7 = bic(ll7, numpars7, obs)
+bic8 = bic(ll8, numpars8, obs)
+bic9 = bic(ll9, numpars9, obs)
+bic10 = bic(ll10, numpars10, obs)
+bic11 = bic(ll11, numpars11, obs)
+bic12 = bic(ll12, numpars12, obs)
+bic13 = bic(ll13, numpars13, obs)
+bic14 = bic(ll14, numpars14, obs)
+bic15 = bic(ll15, numpars15, obs)
+bic16 = bic(ll16, numpars16, obs)
+bic17 = bic(ll17, numpars17, obs)
+bic18 = bic(ll18, numpars18, obs)
 
-numpars3 = system_parameters([3,4], [3,4]; p=3)
+# BIC chooses ranks 2,9 with bic value -14252.4629142954 (ll value is 7527.39)
 
+res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000, p=2)
+res2 = comovement_reg(cen_data, dimvals, [2, 1]; iters=1000, p=2)
+res3 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000, p=2)
+res4 = comovement_reg(cen_data, dimvals, [2, 2]; iters=1000, p=2)
+res5 = comovement_reg(cen_data, dimvals, [1, 3]; iters=1000, p=2)
+res6 = comovement_reg(cen_data, dimvals, [2, 3]; iters=1000, p=2)
+res7 = comovement_reg(cen_data, dimvals, [1, 4]; iters=1000, p=2)
+res8 = comovement_reg(cen_data, dimvals, [2, 4]; iters=1000, p=2)
+res9 = comovement_reg(cen_data, dimvals, [1, 5]; iters=1000, p=2)
 
-
-res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000)
-res2 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000)
-res3 = comovement_reg(cen_data, dimvals, [3, 1]; iters=1000)
-res4 = comovement_reg(cen_data, dimvals, [4, 1]; iters=1000)
-res5 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000)
-res6 = comovement_reg(cen_data, dimvals, [2, 2]; iters=1000)
-res7 = comovement_reg(cen_data, dimvals, [3, 2]; iters=1000)
-res8 = comovement_reg(cen_data, dimvals, [4, 2]; iters=1000)
-res9 = comovement_reg(cen_data, dimvals, [1, 3]; iters=1000)
-res10 = comovement_reg(cen_data, dimvals, [2, 3]; iters=1000)
-res11 = comovement_reg(cen_data, dimvals, [3, 3]; iters=1000)
-res12 = comovement_reg(cen_data, dimvals, [4, 3]; iters=1000)
-res13 = comovement_reg(cen_data, dimvals, [1, 4]; iters=1000)
-res14 = comovement_reg(cen_data, dimvals, [2, 4]; iters=1000)
-res15 = comovement_reg(cen_data, dimvals, [3, 4]; iters=1000, p=4)
-res16 = comovement_reg(cen_data, dimvals, [4, 4]; iters=1000)
-res17 = comovement_reg(cen_data, dimvals, [1, 5]; iters=1000)
-res18 = comovement_reg(cen_data, dimvals, [2, 5]; iters=1000)
-res19 = comovement_reg(cen_data, dimvals, [3, 5]; iters=1000)
-res20 = comovement_reg(cen_data, dimvals, [4, 5]; iters=1000, p=4)
-res.res.minimum
+# From res10, res8 is the best so far with -7.217803e+03
+res10 = comovement_reg(cen_data, dimvals, [2, 5]; iters=1000, p=2)
+res11 = comovement_reg(cen_data, dimvals, [1, 6]; iters=1000, p=2)
+res12 = comovement_reg(cen_data, dimvals, [2, 6]; iters=1000, p=2)
+res13 = comovement_reg(cen_data, dimvals, [1, 7]; iters=1000, p=2)
+res14 = comovement_reg(cen_data, dimvals, [2, 7]; iters=1000, p=2)
+res15 = comovement_reg(cen_data, dimvals, [1, 8]; iters=1000, p=2)
+res16 = comovement_reg(cen_data, dimvals, [2, 8]; iters=1000, p=2)
+res17 = comovement_reg(cen_data, dimvals, [1, 9]; iters=1000, p=2)
+res18 = comovement_reg(cen_data, dimvals, [2, 9]; iters=1000, p=2)
 
 res.delta_est
 res.delta_stderr

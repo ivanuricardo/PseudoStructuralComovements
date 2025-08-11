@@ -379,9 +379,20 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     hess_non = hessian!(td, res.minimizer)
     hess_est = 0.5 .* (hess_non + hess_non')
     hess_eigs = real.(eigvals(hess_est))
+
+    max_eig = maximum(abs.(hess_eigs))
+    min_eig = minimum(abs.(hess_eigs))
+    eig_tol = size(hess_est, 1) * eps(Float64) * max(1.0, max_eig)
+    tol_rel = 1e-8 * max_eig
+    tol_floor = 1e-12
+    tol_reg = max(eig_tol, tol_rel, tol_floor)
+
     neg_eigs = hess_eigs[hess_eigs.<0.0]
     if !isempty(neg_eigs)
         @warn "Hessian has negative eigenvalues: $(neg_eigs). Using nearest positive semidefinite matrix."
+        hess_pd = nearest_posdef(hess_est)
+    elseif cond(hess_est) > 1e12 || min_eig < tol_reg
+        @warn "Hessian is near singular!"
         hess_pd = nearest_posdef(hess_est)
     else
         hess_pd = copy(hess_est)
