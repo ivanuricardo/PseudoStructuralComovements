@@ -236,12 +236,17 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     ell = try
         loglike_calc(theta, resp, pred, dimvals, ranks; p)
     catch e
-        @warn "Log Likelihood returns an error!"
+        if isa(e, InterruptException)
+            rethrow(e)
+        end
+        @warn "Log Likelihood returns an error!" exception=(e, catch_backtrace())
         return 1e12
     end
-    if !isfinite(ell)
+
+    if !isfinite(ell) || abs(ell) > 1e12
         return 1e12
     end
+
     return ell
 end
 
