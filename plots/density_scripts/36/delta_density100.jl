@@ -10,10 +10,10 @@ delta_true = density_results["delta_true"]
 h1 = Plots.density(correct_delta[1, :], legend=false, ylabel="Density")
 Plots.density!(under_delta[1, :])
 Plots.vline!([delta_true[2]])
-savefig(h1, "../../density_plots/36/delta_density100_1.png")
+savefig(h1, "../../density_plots/36/delta_density100_1_36.png")
 
 h2 = Plots.density(correct_delta[2, :], label="Correct gamma", legendfontsize=9)
 Plots.density!(under_delta[2, :], label="Underestimated delta")
 Plots.vline!([delta_true[3]], label = "True Value")
-savefig(h2, "../../density_plots/36/delta_density100_2.png")
+savefig(h2, "../../density_plots/36/delta_density100_2_36.png")
 

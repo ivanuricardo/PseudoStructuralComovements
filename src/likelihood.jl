@@ -236,7 +236,13 @@ function loglike(theta, resp, pred, dimvals, ranks; p=1)
     ell = try
         loglike_calc(theta, resp, pred, dimvals, ranks; p)
     catch e
-        if isa(e, InterruptException)
+        if isa(e, InterruptException) ||
+           isa(e, OutOfMemoryError) ||
+           isa(e, StackOverflowError) ||
+           isa(e, MethodError) ||
+           isa(e, UndefVarError) ||
+           isa(e, LoadError) ||
+           isa(e, InitError)
             rethrow(e)
         end
         @warn "Log Likelihood returns an error!" exception=(e, catch_backtrace())
@@ -387,17 +393,13 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
 
     max_eig = maximum(abs.(hess_eigs))
     min_eig = minimum(abs.(hess_eigs))
-    eig_tol = size(hess_est, 1) * eps(Float64) * max(1.0, max_eig)
-    tol_rel = 1e-8 * max_eig
-    tol_floor = 1e-12
-    tol_reg = max(eig_tol, tol_rel, tol_floor)
 
     neg_eigs = hess_eigs[hess_eigs.<0.0]
     if !isempty(neg_eigs)
         @warn "Hessian has negative eigenvalues: $(neg_eigs). Using nearest positive semidefinite matrix."
         hess_pd = nearest_posdef(hess_est)
-    elseif cond(hess_est) > 1e12 || min_eig < tol_reg
-        @warn "Hessian is near singular!"
+    elseif min_eig < 1e-09
+        @warn "Hessian is near singular! min eig is $min_eig and condition number is $(cond(hess_est))"
         hess_pd = nearest_posdef(hess_est)
     else
         hess_pd = copy(hess_est)

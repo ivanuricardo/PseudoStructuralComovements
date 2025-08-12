@@ -57,6 +57,8 @@ function system_parameters(dimvals, ranks; p=1)
     return first_term + second_term + num_ll1 + num_ll2 + third_term - 1
 end
 
+hess_est = res1.hess_est
+
 
 
 aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
@@ -83,11 +85,11 @@ ll17 = -res17.res.minimum
 ll18 = -res18.res.minimum
 
 
-numpars1 = system_parameters(dimvals, [1, 1]; p=2)
-numpars2 = system_parameters(dimvals, [2, 1]; p=2)
-numpars3 = system_parameters(dimvals, [1, 2]; p=2)
-numpars4 = system_parameters(dimvals, [2, 2]; p=2)
-numpars5 = system_parameters(dimvals, [1, 3]; p=2)
+numpars1 = system_parameters(dimvals, [1, 1]; p=3)
+numpars2 = system_parameters(dimvals, [2, 1]; p=3)
+numpars3 = system_parameters(dimvals, [1, 2]; p=3)
+numpars4 = system_parameters(dimvals, [2, 2]; p=3)
+numpars5 = system_parameters(dimvals, [1, 3]; p=3)
 numpars6 = system_parameters(dimvals, [2, 3]; p=2)
 numpars7 = system_parameters(dimvals, [1, 4]; p=2)
 numpars8 = system_parameters(dimvals, [2, 4]; p=2)
@@ -124,9 +126,9 @@ bic18 = bic(ll18, numpars18, obs)
 
 # BIC chooses ranks 2,9 with bic value -14252.4629142954 (ll value is 7527.39)
 
-res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000, p=2)
-res2 = comovement_reg(cen_data, dimvals, [2, 1]; iters=1000, p=2)
-res3 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000, p=2)
+res1 = comovement_reg(cen_data, dimvals, [1, 1]; iters=1000, p=3)
+res2 = comovement_reg(cen_data, dimvals, [2, 1]; iters=1000, p=3)
+res3 = comovement_reg(cen_data, dimvals, [1, 2]; iters=1000, p=3)
 res4 = comovement_reg(cen_data, dimvals, [2, 2]; iters=1000, p=2)
 res5 = comovement_reg(cen_data, dimvals, [1, 3]; iters=1000, p=2)
 res6 = comovement_reg(cen_data, dimvals, [2, 3]; iters=1000, p=2)
