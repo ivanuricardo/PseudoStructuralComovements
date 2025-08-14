@@ -1,6 +1,17 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
 
+colorblind_palette = [
+    RGB(230/255, 159/255, 0/255),     # Orange
+    RGB(86/255, 180/255, 233/255),    # Sky blue
+    RGB(0/255, 158/255, 115/255),     # Bluish green
+    RGB(240/255, 228/255, 66/255),    # Yellow
+    RGB(0/255, 114/255, 178/255),     # Blue
+    RGB(213/255, 94/255, 0/255),      # Vermillion
+    RGB(204/255, 121/255, 167/255),   # Reddish purple
+    RGB(0/255, 0/255, 0/255),         # Black
+]
+
 density_results100 = load(datadir("coverage/34/delta_cov_results100.jld2"))
 density_results250 = load(datadir("coverage/34/delta_cov_results250.jld2"))
 
@@ -61,6 +72,7 @@ for (j, T) in enumerate(sample_sizes)
         barplot!(barpositions, coverage;
             width=bar_width,
             label=est,
+            color=colorblind_palette[i],
         )
     end
 

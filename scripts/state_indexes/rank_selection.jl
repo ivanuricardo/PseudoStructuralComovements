@@ -15,6 +15,9 @@ cen_data = vecdata .- mean(vecdata, dims=2)
 
 icest = rank_selection(cen_data, dimvals; iters=1000, pmax=3)
 
+# AIC selects ranks 2,9 with 3 lags
+# BIC and HQC selects ranks 2,9 with 2 lags
+
 
 small_bench = R"""
 d1 = $dimvals[1]
