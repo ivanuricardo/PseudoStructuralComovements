@@ -1,9 +1,6 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
 using RCall
-R"""
-source("r_helpers.R")
-"""
 Random.seed!(20250723)
 
 sims = 100
@@ -40,8 +37,6 @@ save(datadir("lag1/14_results.jld2"), Dict(
     "smallbic" => smallbic14,
     "medaic" => medaic14,
     "medbic" => medbic14,
-    "smallbic_bench" => smallbic14_bench,
-    "medbic_bench" => medbic14_bench,
 ))
 
 push!(ranks, 1)
@@ -49,8 +44,6 @@ medaicstats = sim_stats(medaic14, ranks, sims)
 medbicstats = sim_stats(medbic14, ranks, sims)
 smallaicstats = sim_stats(smallaic14, ranks, sims)
 smallbicstats = sim_stats(smallbic14, ranks, sims)
-smallbicstats_bench = sim_stats(smallbic14_bench, ranks, sims)
-medbicstats_bench = sim_stats(medbic14_bench, ranks, sims)
 
 println("Average rank for small size (AIC): ", smallaicstats.avgval)
 println("Average lag for small size (AIC): ", smallaicstats.avgval)

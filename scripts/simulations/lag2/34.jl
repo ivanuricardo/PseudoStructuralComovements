@@ -7,6 +7,7 @@ sims = 100
 dimvals = [3, 4]
 ranks = [3, 4]
 snr = 0.7
+p = 2
 
 smallaic34 = fill(NaN, 3, sims)
 smallbic34 = fill(NaN, 3, sims)
@@ -17,11 +18,11 @@ burnin = 100
 smallobs = 100
 medobs = 250
 
-A = generate_rrmar_coef(dimvals, ranks)
+A = generate_rrmar_coef(dimvals, ranks; p=2)
 
 @showprogress Threads.@threads for s = 1:sims
-    medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin, matrix_err=true)
-    smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin, matrix_err=true)
+    medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin, matrix_err=true, p=2)
+    smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin, matrix_err=true, p=2)
 
     smallicest = rank_selection(smallmar.data, dimvals; iters=1000, pmax=2)
     smallaic34[:, s] .= smallicest.aic_sel[1:3]

@@ -5,45 +5,46 @@ Random.seed!(20250723)
 
 sims = 100
 dimvals = [3, 4]
-ranks = [3, 4]
+ranks = [1, 4]
 snr = 0.7
+p = 2
 
-smallaic34 = fill(NaN, 3, sims)
-smallbic34 = fill(NaN, 3, sims)
-medaic34 = fill(NaN, 3, sims)
-medbic34 = fill(NaN, 3, sims)
+smallaic14 = fill(NaN, 3, sims)
+smallbic14 = fill(NaN, 3, sims)
+medaic14 = fill(NaN, 3, sims)
+medbic14 = fill(NaN, 3, sims)
 
 burnin = 100
 smallobs = 100
 medobs = 250
 
-A = generate_rrmar_coef(dimvals, ranks)
+A = generate_rrmar_coef(dimvals, ranks; p=2)
 
 @showprogress Threads.@threads for s = 1:sims
-    medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin, matrix_err=true)
-    smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin, matrix_err=true)
+    medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin, matrix_err=true, p=2)
+    smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin, matrix_err=true, p=2)
 
     smallicest = rank_selection(smallmar.data, dimvals; iters=1000, pmax=2)
-    smallaic34[:, s] .= smallicest.aic_sel[1:3]
-    smallbic34[:, s] .= smallicest.bic_sel[1:3]
+    smallaic14[:, s] .= smallicest.aic_sel[1:3]
+    smallbic14[:, s] .= smallicest.bic_sel[1:3]
 
     medicest = rank_selection(medmar.data, dimvals; iters=1000, pmax=2)
-    medaic34[:, s] .= medicest.aic_sel[1:3]
-    medbic34[:, s] .= medicest.bic_sel[1:3]
+    medaic14[:, s] .= medicest.aic_sel[1:3]
+    medbic14[:, s] .= medicest.bic_sel[1:3]
 end
 
-save(datadir("lag1/34_results.jld2"), Dict(
-    "smallaic" => smallaic34,
-    "smallbic" => smallbic34,
-    "medaic" => medaic34,
-    "medbic" => medbic34,
+save(datadir("lag1/14_results.jld2"), Dict(
+    "smallaic" => smallaic14,
+    "smallbic" => smallbic14,
+    "medaic" => medaic14,
+    "medbic" => medbic14,
 ))
 
 push!(ranks, 1)
-medaicstats = sim_stats(medaic34, ranks, sims)
-medbicstats = sim_stats(medbic34, ranks, sims)
-smallaicstats = sim_stats(smallaic34, ranks, sims)
-smallbicstats = sim_stats(smallbic34, ranks, sims)
+medaicstats = sim_stats(medaic14, ranks, sims)
+medbicstats = sim_stats(medbic14, ranks, sims)
+smallaicstats = sim_stats(smallaic14, ranks, sims)
+smallbicstats = sim_stats(smallbic14, ranks, sims)
 
 println("Average rank for small size (AIC): ", smallaicstats.avgval)
 println("Average lag for small size (AIC): ", smallaicstats.avgval)
