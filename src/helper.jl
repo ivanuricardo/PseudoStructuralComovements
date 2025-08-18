@@ -143,7 +143,7 @@ function nearest_posdef(A; minimumeigenvalue=1e-6)
 end
 
 function check_rank(ictable, compared_rank)
-    selected_ic = ictable[:, ictable[(end-1), :].==compared_rank]
+    selected_ic = ictable[:, ictable[(end-2), :].==compared_rank]
     aicvec = argmin(selected_ic[1, :])
     aic_sel = selected_ic[(end-1):end, aicvec]
     bicvec = argmin(selected_ic[2, :])
