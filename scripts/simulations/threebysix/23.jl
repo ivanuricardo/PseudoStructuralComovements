@@ -60,10 +60,11 @@ A = generate_rrmar_coef(dimvals, ranks)
         """
         @rget small_selected_rank
         smallbic21_bench[:, s] .= small_selected_rank[:selected_ranks]
-        under_small_bench_table = check_rank(small_selected_rank[:ic_results]', 1.0)
-        under_smallbic21_bench[:, s] = under_small_bench_table.aic_sel
-        over_small_bench_table = check_rank(small_selected_rank[:ic_results]', 3.0)
-        over_smallbic21_bench[:, s] = over_small_bench_table.aic_sel
+        small_ic_result = hcat(small_selected_rank[:ic_results], ones(prod(dimvals)))
+        under_small_bench_table = check_rank(small_ic_result', 1.0)
+        under_smallbic21_bench[:, s] = under_small_bench_table.aic_sel[1:2]
+        over_small_bench_table = check_rank(small_ic_result', 3.0)
+        over_smallbic21_bench[:, s] = over_small_bench_table.aic_sel[1:2]
     end
 
     small_clipped_icest = check_rank(smallicest.ictable, 1.0)
@@ -89,10 +90,11 @@ A = generate_rrmar_coef(dimvals, ranks)
         """
         @rget med_selected_rank
         medbic21_bench[:, s] .= med_selected_rank[:selected_ranks]
-        under_med_bench_table = check_rank(med_selected_rank[:ic_results]', 1.0)
-        under_medbic21_bench[:, s] = under_med_bench_table.aic_sel
-        over_med_bench_table = check_rank(med_selected_rank[:ic_results]', 3.0)
-        over_medbic21_bench[:, s] = over_med_bench_table.aic_sel
+        med_ic_result = hcat(med_selected_rank[:ic_results], ones(prod(dimvals)))
+        under_med_bench_table = check_rank(med_ic_result', 1.0)
+        under_medbic21_bench[:, s] = under_med_bench_table.aic_sel[1:2]
+        over_med_bench_table = check_rank(med_ic_result', 3.0)
+        over_medbic21_bench[:, s] = over_med_bench_table.aic_sel[1:2]
     end
 
     med_clipped_icest = check_rank(medicest.ictable, 1.0)
