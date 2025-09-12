@@ -30,11 +30,10 @@ under250 = vec(sum(under_cov250, dims=2))
 over250 = vec(sum(over_cov250, dims=2))
 
 # Labels
-deltas = ["δ₁", "δ₂"]
-gamma_ranks = ["Correct", "Overestimated", "Underestimated"]
+deltas = [L"\delta_1^*", L"\delta_2^*"]
+delta_ranks = ["Correct", "Overestimated", "Underestimated"]
 sample_sizes = ["T = 100", "T = 250"]
 
-# Now build coverage_data by looping over the three γ’s:
 coverage_data = Dict{String,Vector{Vector{Float64}}}()
 for (i, γ) in enumerate(deltas)
     coverage_data[γ] = [
@@ -49,34 +48,37 @@ coverage_data = Dict(k => [map(x -> x / 10, row) for row in v] for (k, v) in cov
 # Prepare plotting data
 bar_width = 0.25
 x_positions = [1, 2, 3]  # Delta rank groups
-offsets = [-bar_width / 2, bar_width / 2]  # For each gamma estimator
+offsets = [-bar_width / 2, bar_width / 2]  # For each delta estimator
 
 fig = Figure(
-    size=(800, 500),
+    size=(1000, 300),
     backgroundcolor=:transparent     # make the figure background invisible
 );
 
 for (j, T) in enumerate(sample_sizes)
-    ax = Axis(fig[j, 1];
-        title=T,
-        ylabel="Coverage (%)",
-        xticks=(x_positions, gamma_ranks),
-        limits=(nothing, (80, 100)),    # now from 80% up to 100%
-        yticks=80:5:100,                # ticks every 5%
-        backgroundcolor=:transparent,
+    ax = Axis(fig[1, j];
+        title = T,
+        titlesize = 20,
+        ylabel = j == 1 ? "Coverage (%)" : "",
+        ylabelsize = 18,
+        xticks = (x_positions, delta_ranks),
+        xlabelsize = 30,
+        limits = (nothing, (80, 100)),
+        yticks = 80:5:100,
+        backgroundcolor = :transparent,
     )
 
     for (i, est) in enumerate(deltas)
         coverage = coverage_data[est][j]
         barpositions = x_positions .+ offsets[i]
         barplot!(barpositions, coverage;
-            width=bar_width,
-            label=est,
-            color=colorblind_palette[i],
+            width = bar_width,
+            label = est,
+            color = colorblind_palette[i],
         )
     end
 
-    if j == 1
+    if j == 2
         axislegend(ax; position=:rt, backgroundcolor=:transparent)
     end
 end

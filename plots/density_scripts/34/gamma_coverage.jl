@@ -30,14 +30,10 @@ under250 = vec(sum(under_cov250, dims=2))
 over250 = vec(sum(over_cov250, dims=2))
 
 # Labels
-gammas = ["γ₁", "γ₂", "γ₃"]
-delta_ranks = ["Correct", "Overestimated", "Underestimated"]
+gammas = [L"\gamma_1^*", L"\gamma_2^*", L"\gamma_3^*"]
+gamma_ranks = ["Correct", "Overestimated", "Underestimated"]
 sample_sizes = ["T = 100", "T = 250"]
 
-# Coverage results (in percentages)
-# Format: gamma_estimate[delta_rank][sample_size]
-
-# Now build coverage_data by looping over the three γ’s:
 coverage_data = Dict{String,Vector{Vector{Float64}}}()
 for (i, γ) in enumerate(gammas)
     coverage_data[γ] = [
@@ -55,15 +51,18 @@ x_positions = [1, 2, 3]  # Delta rank groups
 offsets = [-bar_width, 0.0, bar_width]  # For each gamma estimator
 
 fig = Figure(
-    size=(800, 500),
+    size=(1000, 300),
     backgroundcolor=:transparent     # make the figure background invisible
 );
 
 for (j, T) in enumerate(sample_sizes)
-    ax = Axis(fig[j, 1],
+    ax = Axis(fig[1, j];
         title=T,
-        ylabel="Coverage (%)",
-        xticks=(x_positions, delta_ranks),
+        titlesize = 20,
+        ylabel = j == 1 ? "Coverage (%)" : "",   # only left subplot has ylabel
+        ylabelsize = 18,
+        xticks=(x_positions, gamma_ranks),
+        xlabelsize = 30,
         limits=(nothing, (80, 100)),
         yticks=80:5:100,
         backgroundcolor=:transparent,
@@ -79,7 +78,7 @@ for (j, T) in enumerate(sample_sizes)
         )
     end
 
-    if j == 1
+    if j == 2
         axislegend(ax; position=:rt, backgroundcolor=:transparent)
     end
 end

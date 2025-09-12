@@ -12,22 +12,37 @@ correct_cov = density_results["correct_cov"]
 under_cov = density_results["under_cov"]
 over_cov = density_results["over_cov"]
 
-h1 = StatsPlots.density(correct_gamma[1, :], legend=false, ylabel="Density")
-StatsPlots.density!(under_gamma[1, :])
-StatsPlots.density!(over_gamma[1, :])
-vline!([gamma_true[2]])
+h1 = StatsPlots.density(
+    correct_gamma[1, :];
+    legend=false,
+    ylabel="Density",
+    linewidth=3,
+    yguidefont=16   # <-- increase y-axis label font size
+)
+StatsPlots.density!(under_gamma[1, :]; linewidth=3)
+StatsPlots.density!(over_gamma[1, :]; linewidth=3)
+vline!([gamma_true[2]]; linewidth=3)
 savefig(h1, "../../density_plots/34/gamma_density100_1.png")
 
-h2 = StatsPlots.density(correct_gamma[2, :], legend=false)
-StatsPlots.density!(under_gamma[2, :])
-StatsPlots.density!(over_gamma[2, :])
-vline!([gamma_true[3]])
+h2 = StatsPlots.density(
+    correct_gamma[2, :];
+    legend=false,
+    linewidth=3,
+)
+StatsPlots.density!(under_gamma[2, :]; linewidth=3)
+StatsPlots.density!(over_gamma[2, :]; linewidth=3)
+vline!([gamma_true[3]]; linewidth=3)
 savefig(h2, "../../density_plots/34/gamma_density100_2.png")
 
-h3 = StatsPlots.density(correct_gamma[3, :], label="Correct delta", legendfontsize=9)
-StatsPlots.density!(under_gamma[3, :], label="Underestimated delta")
-StatsPlots.density!(over_gamma[3, :], label="Overestimated delta")
-vline!([gamma_true[4]], label="True value")
+h3 = StatsPlots.density(
+    correct_gamma[3, :];
+    linewidth=3,
+    label="Correct",
+    legendfontsize=13,
+)
+StatsPlots.density!(under_gamma[3, :]; label="Underestimated", linewidth=3)
+StatsPlots.density!(over_gamma[3, :]; label="Overestimated", linewidth=3)
+vline!([gamma_true[4]]; linewidth=3,label="True value")
 savefig(h3, "../../density_plots/34/gamma_density100_3.png")
 
 correct_coverages = sum(correct_cov, dims=2)
