@@ -12,12 +12,8 @@ vecdata = tenmat(matdata, row=[1, 2])
 pdata = permutedims(matdata, (3, 1, 2))
 
 dimvals = collect(size(matdata[:, :, 1]))
-cen_data = vecdata .- mean(vecdata, dims=2)
 
-smallicest = rank_selection(cen_data, dimvals; iters=1000, pmax=4)
-# AIC selects 3,5,1
-# BIC selects 2,5,1
-# HQC selects 3,5,1
+smallicest = rank_selection(vecdata, dimvals; iters=1000, pmax=4)
 
 # AIC selects 2,3,1
 # BIC selects 2,1,1
@@ -120,3 +116,57 @@ res2.delta_stderr
 
 res2.gamma_est
 res2.gamma_stderr
+
+################################################################################
+
+# Trying different permutations
+
+p1 = 1:12
+p2 = randperm(12)
+res1 = comovement_reg(vecdata[p1, :], dimvals, [2, 1]; iters=1000)
+res2 = comovement_reg(vecdata[p2, :], dimvals, [2, 1]; iters=1000)
+
+coef1 = inv(res1.omega) * res1.pi_mat
+coef2 = inv(res2.omega) * res2.pi_mat
+residuals1 = cen_data[p1, 2:end] - coef1 * cen_data[p1, 1:end-1]
+residuals2 = cen_data[p2, 2:end] - coef2 * cen_data[p2, 1:end-1]
+cov1 = residuals1 * residuals1'
+cov2 = residuals2 * residuals2'
+logdet(cov1)
+logdet(cov2)
+
+
+using LinearAlgebra, Statistics
+n1 = 3
+n2 = 4
+r1 = 2
+r2 = 2
+u1 = randn(n1, r1)
+u2 = randn(n2, r2)
+u3 = randn(n1, r1)
+u4 = randn(n2, r2)
+
+q1 = u1[1:r1, 1:r1]
+q2 = u2[1:r2, 1:r2]
+
+u1star = u1 * inv(q1)
+u2star = u2 * inv(q2)
+
+coef = kron(u2, u1) * kron(u4, u3)'
+rot_coef = kron(u2star, u1star) * kron(q2 * u4', q1 * u3')
+
+gammastar = u2star[3:end, :]
+deltastar = u1star[3:end, :]
+gamma = vcat(-gammastar', I)
+delta = vcat(-deltastar', I)
+
+gamma' * u2star
+delta' * u1star
+
+kron(gamma, delta)' * rot_coef
+
+
+
+
+
+

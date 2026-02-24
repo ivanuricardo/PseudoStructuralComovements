@@ -20,8 +20,8 @@ function rank_selection(data, dimvals; iters=1000, pmax=1)
     ictable = fill(NaN, 6, prod(dimvals) * pmax)
     rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2], 1:pmax))
 
-    for i = 1:(prod(dimvals) * pmax)
-    #=@showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)=#
+    # for i = 1:(prod(dimvals) * pmax)
+    @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
         selected_rank_lags = collect(rank_grid[i])
         selected_rank = selected_rank_lags[1:2]
         selected_lag = selected_rank_lags[3]
@@ -49,7 +49,7 @@ function rank_selection(data, dimvals; iters=1000, pmax=1)
 end
 
 function sim_stats(selectedvals::AbstractMatrix, correctval::AbstractVector, sims::Int)
-    avgval = mean(selectedvals, dims=2)
+    mad = mean(abs.(selectedvals .- correctval), dims=2)
     stdval = std(selectedvals, dims=2)
     numvals = size(selectedvals, 1)
     freqcorrect = fill(NaN, numvals)
@@ -63,5 +63,5 @@ function sim_stats(selectedvals::AbstractMatrix, correctval::AbstractVector, sim
         freqlow[i] = count(x -> x < cval, selectedvals[i, :]) / sims
     end
 
-    return (; avgval, stdval, freqcorrect, freqhigh, freqlow)
+    return (; mad, stdval, freqcorrect, freqhigh, freqlow)
 end

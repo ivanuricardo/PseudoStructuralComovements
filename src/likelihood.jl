@@ -348,7 +348,7 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     data = data .- mean(data, dims = 2)
 
     perm_resp = data[:, 2:end]
-    pred = data[:, 1:(end-1)]
+    pred = data[:, 1:(end-1)] .- mean(data[:, 1:(end-1)])
     resp = perm_resp .- mean(perm_resp, dims=2)
 
     all_results = []
