@@ -28,5 +28,14 @@ claims = transform(ut_claims)
 
 Plots.plot(demean_standardize(claims))
 Plots.plot(claims[:, 1])
+Plots.plot!(permits[:, 1])
 
+loaded_results = load(datadir("updated_states/permits.jld2"))
+seas_permits = loaded_results["res"]
+
+ut_permits = seasonal_adjust(seas_permits)
+permits = transform(ut_permits)
+Plots.plot(permits)
+Plots.plot(ut_permits[:, 5])
+Plots.plot!(seas_permits[:, 5])
 
