@@ -5,45 +5,39 @@ using XLSX
 Random.seed!(20260203)
 include(projectdir("scripts/updated_states/helpers.jl"))
 
-# Without using Michigan or Wisconsin
-# Not sure if I should still keep this series
 rawdata = XLSX.readdata(datadir("./state_indexes/reguib_northcentral.xlsx"), "Sheet1!A2:S459")
 vecdata = Float64.(rawdata[:, 2:end])'
-untransformed_coincident = vecdata[1:2:end, 232:end-2]'
+untransformed_coincident = vecdata[1:2:end, 277:end-2]'
 quarterly_coincident = monthly_to_quarterly(untransformed_coincident)
 coincident = quarterly_coincident[:, [1,2,3,5,6,7,8]]
 
 file = XLSX.readxlsx(datadir("updated_states/wages.xlsx"))
 sheet = file["Table"]
-ut_wages = Float64.(XLSX.getdata(sheet, "O7:CL13"))'
+ut_wages = Float64.(XLSX.getdata(sheet, "C7:BJ15"))'
 # Rearrange to be alphabetical and align with other series
-# iowa, illinois, indiana, minnesotta, north dakota, ohio, south dakota
-# maybe I could try without north dakota
-rearranged_wages = ut_wages[:, [3,1,2,4,5,6,7]]
-wages = transform(rearranged_wages[:, [1,2,3,4,6,7]])
-
-start_date = 133  # Jan 2001
-covid_start = 12  # Dec 2019
+# iowa, illinois, indiana, michigan, minnesota, north dakota, ohio, south dakota
+rearranged_wages = ut_wages[:, [3,1,2,4,5,6,7,8,9]]
+wages = transform(rearranged_wages)
 
 # Before transformation
-ut_employment = load_series("employment")[start_date:(end-covid_start), :]
-ut_unemployment = load_series("unemployment")[start_date:(end-covid_start), :]
-ut_hours = load_series("hours")[1:(end-covid_start), :]  # already starts in Jan
+ut_employment = load_series("employment")
+ut_unemployment = load_series("unemployment")
+ut_hours = load_series("hours")
 
 # Aggregate to quarterly
 quarterly_employment = monthly_to_quarterly(ut_employment)
 quarterly_unemployment = monthly_to_quarterly(ut_unemployment)
 quarterly_hours = monthly_to_quarterly(ut_hours)
 
-employment = transform(quarterly_employment)[:, [1,2,3,4,6,7]]
-unemployment = transform(quarterly_unemployment; type = "diff")[:, [1,2,3,4,6,7]]
-hours = transform(quarterly_hours)[:, [1,2,3,4,6,7]]
+employment = transform(quarterly_employment)
+unemployment = transform(quarterly_unemployment; type = "diff")
+hours = transform(quarterly_hours)
 
 catted_data = cat(employment', unemployment', hours', wages'; dims = 3)
 tendata = permutedims(catted_data, (1,3,2))
 matdata = vectorize(tendata)
 
-ser = 1
+ser = 4
 Plots.plot(demean_standardize(employment[:, ser]))
 Plots.plot!(-demean_standardize(unemployment[:, ser]))
 Plots.plot!(demean_standardize(hours[:, ser]))
@@ -121,6 +115,46 @@ res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
 #  -15415.5  -15183.8  -15323.0  6.0  4.0  1.0
 #  -15415.1  -15181.0  -15321.6  7.0  4.0  1.0
 
+# Just for  9 states, quarterly
+# julia> icest.ictable'
+# 36×6 adjoint(::Matrix{Float64}) with eltype Float64:
+#  -15457.8  -15297.8  -15475.0  1.0  1.0  1.0
+#  -15505.4  -15314.2  -15470.6  2.0  1.0  1.0
+#  -15531.3  -15313.2  -15451.6  3.0  1.0  1.0
+#  -15538.8  -15297.8  -15420.9  4.0  1.0  1.0
+#  -15542.6  -15282.9  -15393.5  5.0  1.0  1.0
+#  -15539.0  -15264.8  -15365.7  6.0  1.0  1.0
+#  -15530.2  -15245.6  -15339.6  7.0  1.0  1.0
+#  -15532.1  -15241.2  -15331.1  8.0  1.0  1.0
+#  -15530.7  -15237.8  -15326.2  9.0  1.0  1.0
+#  -15469.0  -15298.7  -15464.9  1.0  2.0  1.0
+#  -15580.7  -15379.2  -15524.6  2.0  2.0  1.0
+#  -15642.7  -15414.1  -15541.5  3.0  2.0  1.0
+#  -15664.0  -15412.6  -15524.7  4.0  2.0  1.0
+#  -15594.7  -15324.6  -15424.2  5.0  2.0  1.0
+#  -15616.9  -15332.2  -15422.2  6.0  2.0  1.0
+#  -15625.8  -15330.7  -15413.7  7.0  2.0  1.0
+#  -15628.2  -15326.9  -15405.8  8.0  2.0  1.0
+#  -15680.5  -15377.1  -15454.6  9.0  2.0  1.0
+#  -15476.0  -15299.4  -15459.0  1.0  3.0  1.0
+#  -15592.0  -15384.3  -15523.1  2.0  3.0  1.0
+#  -15665.5  -15430.7  -15551.5  3.0  3.0  1.0
+#  -15701.8  -15444.1  -15549.7  4.0  3.0  1.0
+#  -15728.8  -15452.5  -15545.5  5.0  3.0  1.0
+#  -15747.8  -15457.0  -15540.3  6.0  3.0  1.0
+#  -15760.8  -15459.6  -15536.0  7.0  3.0  1.0
+#  -15766.2  -15458.8  -15531.0  8.0  3.0  1.0
+#  -15764.7  -15455.2  -15526.0  9.0  3.0  1.0
+#  -15475.2  -15296.6  -15453.9  1.0  4.0  1.0
+#  -15592.3  -15382.4  -15519.0  2.0  4.0  1.0
+#  -15664.0  -15427.2  -15545.8  3.0  4.0  1.0
+#  -15703.2  -15443.5  -15546.8  4.0  4.0  1.0
+#  -15728.6  -15450.2  -15541.1  5.0  4.0  1.0
+#  -15748.6  -15455.7  -15536.8  6.0  4.0  1.0
+#  -15764.4  -15461.1  -15535.3  7.0  4.0  1.0
+#  -15771.0  -15461.5  -15531.5  8.0  4.0  1.0
+#  -15769.6  -15458.0  -15526.7  9.0  4.0  1.0
+# BIC selects 8,4, ebic selects 3,3
 
 
 

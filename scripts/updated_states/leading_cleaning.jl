@@ -23,19 +23,23 @@ function seasonal_adjust(matrix::Matrix{Float64})
     sa_values
 end
 
+# log differences
 ut_claims = seasonal_adjust(seas_claims)
 claims = transform(ut_claims)
 
-Plots.plot(demean_standardize(claims))
-Plots.plot(claims[:, 1])
-Plots.plot!(permits[:, 1])
-
+# log differences
 loaded_results = load(datadir("updated_states/permits.jld2"))
 seas_permits = loaded_results["res"]
-
 ut_permits = seasonal_adjust(seas_permits)
 permits = transform(ut_permits)
-Plots.plot(permits)
-Plots.plot(ut_permits[:, 5])
-Plots.plot!(seas_permits[:, 5])
 
+# no transformation
+yield_dir = datadir("updated_states/yield_minus_ffr.csv")
+ut_yield_minus_ffr = CSV.read(yield_dir, DataFrame; header = 1)
+yield_minus_ffr = repeat(ut_yield_minus_ffr.T10YFFM, 1, 7)
+
+loaded_cis = load(datadir("updated_states/coincident_series.jld2"))
+coincident_inds = loaded_cis["cis"]
+
+li_data = vcat(coincident_inds, claims', permits', yield_minus_ffr[2:end, 1]')
+save(datadir("updated_states/leading_data.jld2"), Dict("li_data" => li_data))

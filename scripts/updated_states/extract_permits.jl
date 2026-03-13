@@ -32,24 +32,37 @@ missing_dir = datadir("updated_states/missing_dir/")
 # Downloads.download(base_url * "st1501y.txt", missing_dir * "st1501y.txt")
 # Downloads.download(base_url * "st1502y.txt", missing_dir * "st1502y.txt")
 
-jan = CSV.read(missing_dir * "st1501y.txt", DataFrame; header = 1)
-feb = CSV.read(missing_dir * "st1502y.txt", DataFrame; header = 1)
+# jan = CSV.read(missing_dir * "st1501y.txt", DataFrame; header = 1)
+# feb = CSV.read(missing_dir * "st1502y.txt", DataFrame; header = 1)
+# missing_vec = fill(NaN, length(states))
+#
+# for (i, state) in enumerate(states)
+#     jan_row = jan[(.!ismissing.(jan.State)) .& (jan.State .== state), :]
+#     feb_row = feb[(.!ismissing.(feb.State)) .& (feb.State .== state), :]
+#
+#     one_unit_jan = parse(Float64, jan_row[1,7])
+#     two_unit_jan = parse(Float64, jan_row[1,10])
+#     threefour_unit_jan = parse(Float64, jan_row[1,13])
+#     total_jan = one_unit_jan + two_unit_jan + threefour_unit_jan
+#
+#     one_unit_feb = parse(Float64, feb_row[1,7])
+#     two_unit_feb = parse(Float64, feb_row[1,10])
+#     threefour_unit_feb = parse(Float64, feb_row[1,13])
+#     total_feb = one_unit_feb + two_unit_feb + threefour_unit_feb
+#     missing_vec[i] = total_feb - total_jan
+# end
+
+# An alternative is from the site I was given by email
+Downloads.download("https://www2.census.gov/econ/bps/State/st1502c.txt", missing_dir * "st1502c.txt")
+feb = CSV.read(missing_dir * "st1502c.txt", DataFrame; header = 1)
 missing_vec = fill(NaN, length(states))
-
 for (i, state) in enumerate(states)
-    jan_row = jan[(.!ismissing.(jan.State)) .& (jan.State .== state), :]
     feb_row = feb[(.!ismissing.(feb.State)) .& (feb.State .== state), :]
-
-    one_unit_jan = parse(Float64, jan_row[1,7])
-    two_unit_jan = parse(Float64, jan_row[1,10])
-    threefour_unit_jan = parse(Float64, jan_row[1,13])
-    total_jan = one_unit_jan + two_unit_jan + threefour_unit_jan
 
     one_unit_feb = parse(Float64, feb_row[1,7])
     two_unit_feb = parse(Float64, feb_row[1,10])
     threefour_unit_feb = parse(Float64, feb_row[1,13])
-    total_feb = one_unit_feb + two_unit_feb + threefour_unit_feb
-    missing_vec[i] = total_feb - total_jan
+    missing_vec[i] = one_unit_feb + two_unit_feb + threefour_unit_feb
 end
 
 permits = fill(NaN, num_files, length(states))
@@ -74,4 +87,5 @@ save(datadir("updated_states/permits.jld2"), Dict("res" => permits))
 # Some notes
 # North Dakota in Jan/Feb of 2015 experienced actually negative housing permits
 # Could be because of some corrections in the census data?
+# I got an email fixing this
 

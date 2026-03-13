@@ -8,6 +8,7 @@ state_names = ["IA", "IL", "IN", "MN", "ND", "OH", "SD"]
 rawdata = XLSX.readdata(datadir("./state_indexes/reguib_northcentral.xlsx"), "Sheet1!A2:S459")
 vecdata = Float64.(rawdata[:, 2:end])'
 coincident = vecdata[1:2:end, 230:end-2]'
+leading = vecdata[2:2:end, 230:end-2]'
 
 start_date = 133  # Jan 2001
 covid_start = 12  # Dec 2019
@@ -29,18 +30,18 @@ rearranged_wages = ut_wages[:, [3,1,2,4,5,6,7]]
 monthly_wages = denton(rearranged_wages, ut_employment)
 wages = transform(monthly_wages)
 
-catted_data = cat(unemployment', hours', wages', employment'; dims = 3)
+catted_data = cat(unemployment', hours', employment', wages'; dims = 3)
 tendata = permutedims(catted_data, (1,3,2))
 perm_states = [7,4,5,1,6,2,3]
 # SD, MN, ND, IA, OH, IL, IN
-# perm_states = [1,2,5,6,7,4,3]
-# IA, IL, MN, OH, SD, ND, IN
+perm_states = [2,3,5,6]
+# IA, IL, IN, MN, SD, ND, OH
 rearranged_tendata = tendata[perm_states, :, :]
 matdata = vectorize(rearranged_tendata)
 
 n1, n2, obs = size(tendata)
 dimvals = [n1, n2]
-# res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
+res = comovement_reg(matdata, dimvals, [4, 1]; iters=1000, p=1)
 # save the results
 # save(datadir("updated_states/coincident_results.jld2"), Dict("res" => res))
 # load the results
@@ -49,6 +50,7 @@ res = loaded_results["res"]
 
 # julia> res.delta_est
 # 7×5 Matrix{Float64}:
+# IA, IL, MN, OH, SD, ND, IN
 #   1.0              0.0              0.0              0.0              0.0
 #   0.0              1.0              0.0              0.0              0.0
 #   0.0              0.0              1.0              0.0              0.0
@@ -74,10 +76,10 @@ res = loaded_results["res"]
 #   0.0              0.0               1.0
 #  -0.599(0.057)     58.619(6.562)    -0.258(0.412)
 
-# employment co-moves with wages
-# unemployment co-moves with wages
-# hours co-moves with wages
-# All co-move significantly, which makes sense and can create the coincident
+# order is unemployment, hours, wages, employment
+# unemployment co-moves with employment
+# hours co-moves with employment
+# wages do not co-move with employment
 # indicator
 
 
@@ -90,30 +92,45 @@ res = loaded_results["res"]
 # coincident order is 
 # IA, IL, IN, MI, MN, ND, OH, SD, WI
 # we omit MI and WI
-factors = kron(res.u4_est, res.u3_est)' * matdata
+# factors = kron(res.u4_est, res.u3_est)' * matdata
+factors = kron(res.u4_est, I(4))' * matdata
 u1 = nullspace(res.delta_est') * inv(nullspace(res.delta_est')[6:end, :])
-cis = u1 * factors
-permed_cis = cis[invperm(perm_states), :]
+coincident_inds = u1 * factors
+# permed_cis = coincident_inds[invperm(perm_states), :]
+permed_cis = factors[invperm(perm_states), :]
+
+save(datadir("updated_states/coincident_series.jld2"), Dict("cis" => permed_cis))
 
 # Iowa
 Plots.plot(demean_standardize(coincident[:, 1]), label = "Crone and Clayton-Matthews", title = "Iowa")
 Plots.plot!(demean_standardize(permed_cis[1, :]), label = "Pseudo-Structural")
+Plots.plot!(demean_standardize(leading[:, 1]), label = "Leading Indicator")
+cor(coincident[:, 1], permed_cis[1, :])
+cor(leading[:, 1], permed_cis[1, :])
+cor(leading[:, 1], coincident[:, 1])
 
 # Illinois
 Plots.plot(demean_standardize(coincident[:, 2]), label = "Crone and Clayton-Matthews", title = "Illinois")
 Plots.plot!(demean_standardize(permed_cis[2, :]), label = "Pseudo-Structural")
+Plots.plot!(demean_standardize(leading[:, 2]), label = "Leading Indicator")
+cor(coincident[:, 2], permed_cis[2, :])
+cor(leading[:, 2], permed_cis[2, :])
+cor(leading[:, 2], coincident[:, 2])
 
 # Indiana
 Plots.plot(demean_standardize(coincident[:, 3]), label = "Crone and Clayton-Matthews")
 Plots.plot!(demean_standardize(permed_cis[3, :]), label = "Pseudo-Structural", title = "Indiana")
+cor(coincident[:, 3], permed_cis[3, :])
 
 # Minnesota
 Plots.plot(demean_standardize(coincident[:, 5]), label = "Crone and Clayton-Matthews")
 Plots.plot!(demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
+cor(coincident[:, 5], permed_cis[4, :])
 
 # North Dakota
 Plots.plot(demean_standardize(coincident[:, 6]), label = "Crone and Clayton-Matthews")
 Plots.plot!(demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "North Dakota")
+cor(coincident[:, 6], permed_cis[5, :])
 # Plots.plot!(demean_standardize(employment[:, 5]), label = "Employment")
 # ND experienced an oil boom between 2006, peaked in 2012, and crashed in 2014.
 # can plot it as
@@ -122,10 +139,12 @@ Plots.plot!(demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", t
 # Ohio
 Plots.plot(demean_standardize(coincident[:, 7]), label = "Crone and Clayton-Matthews")
 Plots.plot!(demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "Ohio")
+cor(coincident[:, 7], permed_cis[6, :])
 
 # South Dakota
 Plots.plot(demean_standardize(coincident[:, 8]), label = "Crone and Clayton-Matthews")
 Plots.plot!(demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "South Dakota")
+cor(coincident[:, 8], permed_cis[7, :])
 
 # Delta method using the asymptotic variance for delta and gamma
 dg_var = inv(res.hess_est)[1:13, 1:13]
@@ -156,8 +175,32 @@ sig_5 = abs.(tstats) .> 1.372
 hcat(theta, delta_method_stderr, tstats, sig_5)
 # It is really only the second variable in the list that is significant
 
+################################################################################
 
+# Coincident and leading indicators
+leading_fixed = leading[:, [2,3,6,7]]
 
+coincident_and_leading = vcat(factors, leading_fixed')
+n1, _, obs = size(rearranged_tendata)
+dimvals = [n1, 2]
+icest = rank_selection(coincident_and_leading, dimvals; iters=1000, pmax=1)
+
+# julia> icest.ictable'
+# 14×6 adjoint(::Matrix{Float64}) with eltype Float64:
+#  -27497.0     -27342.9     -27434.8     1.0  1.0  1.0
+#  -26151.4     -25959.6     -26074.0     2.0  1.0  1.0
+#  -25457.9     -25235.3     -25368.1     3.0  1.0  1.0
+#  -24686.7     -24440.1     -24587.2     4.0  1.0  1.0
+#  -29175.5     -28911.8     -29069.1     5.0  1.0  1.0
+#       2.0e12       2.0e12       2.0e12  6.0  1.0  1.0
+#       2.0e12       2.0e12       2.0e12  7.0  1.0  1.0
+#       2.0e12       2.0e12       2.0e12  1.0  2.0  1.0
+#       2.0e12       2.0e12       2.0e12  2.0  2.0  1.0
+#       2.0e12       2.0e12       2.0e12  3.0  2.0  1.0
+#       2.0e12       2.0e12       2.0e12  4.0  2.0  1.0
+#       2.0e12       2.0e12       2.0e12  5.0  2.0  1.0
+#       2.0e12       2.0e12       2.0e12  6.0  2.0  1.0
+#       2.0e12       2.0e12       2.0e12  7.0  2.0  1.0
 
 
 

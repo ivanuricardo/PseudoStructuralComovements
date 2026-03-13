@@ -229,7 +229,7 @@ function loglike_calc(theta, resp, pred, dimvals, ranks; p=1)
     logdet_term1 = dimvals[2] * log(det_term1)
     logdet_term2 = dimvals[1] * log(det_term2)
 
-    return 0.5 * ((obs - 1) * (logdet_term1 + logdet_term2) + sse)
+    return 0.5 * ((obs) * (logdet_term1 + logdet_term2) + sse)
 end
 
 function loglike(theta, resp, pred, dimvals, ranks; p=1)

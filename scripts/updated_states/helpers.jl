@@ -38,6 +38,20 @@ function transform(data::AbstractMatrix; type::String = "logdiff")
     end
 end
 
+function transform(data::AbstractVector; type::String = "logdiff")
+    if type == "diff"
+        return data[2:end] .- data[1:end-1]
+
+    elseif type == "logdiff"
+        any(data .<= 0) && error("Log differences require strictly positive data")
+        return log.(data[2:end]) .- log.(data[1:end-1])
+
+    else
+        error("Unknown type: $type. Use \"diff\" or \"logdiff\".")
+    end
+    
+end
+
 function monthly_to_quarterly(X::AbstractMatrix; agg_type::String="mean")
     n, m = size(X)
     if n % 3 != 0
@@ -162,3 +176,66 @@ function monthly_aggregation(kind::AbstractString)
     return X
 end
 
+function restricted_VAR(Y)
+
+    n, obs = size(Y)
+    p = 4
+
+    # Effective sample (max lag = 4)
+    Teff = obs - p
+
+    # Containers for lag matrices
+    Y_lag1 = Y[:, p:obs-1]
+    Y_lag2 = Y[:, p-1:obs-2]
+    Y_lag3 = Y[:, p-2:obs-3]
+    Y_lag4 = Y[:, p-3:obs-4]
+
+    # Dependent variables aligned
+    Y_dep = Y[:, p+1:obs]
+
+    # ---------------------------
+    # 1. Estimate CI equation
+    # ---------------------------
+    # Regressors: 4 lags of all variables
+    X_CI = vcat(Y_lag1, Y_lag2, Y_lag3, Y_lag4)
+
+    y_CI = Y_dep[1, :]'
+
+    beta_CI = y_CI * X_CI' * inv(X_CI * X_CI')
+    resid_CI = y_CI - beta_CI * X_CI
+
+    # ---------------------------
+    # 2. Estimate X equations
+    # ---------------------------
+    # Regressors: only lag 1 of all variables
+    X_X = copy(Y_lag1)
+
+    A1 = zeros(n, n)
+    A2 = zeros(n, n)
+    A3 = zeros(n, n)
+    A4 = zeros(n, n)
+
+    # Fill first row (CI equation)
+    A1[1, :] = beta_CI[1, 1:4]
+    A2[1, :] = beta_CI[1, 5:8]
+    A3[1, :] = beta_CI[1, 9:12]
+    A4[1, :] = beta_CI[1, 13:16]
+
+    # Estimate remaining equations
+    residuals = zeros(n, Teff)
+    residuals[1, :] = resid_CI
+
+    for i in 2:n
+        y_i = Y_dep[i, :]'
+        beta_i = y_i * X_X' * inv(X_X * X_X')
+        resid_i = y_i - beta_i * X_X
+
+        A1[i, :] = beta_i
+        residuals[i, :] = resid_i
+    end
+
+    # Residual covariance matrix
+    sigma = (residuals * residuals') / Teff
+
+    return (;A1, A2, A3, A4, sigma)
+end

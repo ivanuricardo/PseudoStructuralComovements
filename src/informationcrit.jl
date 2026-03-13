@@ -11,6 +11,13 @@ end
 
 aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
 bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * log(obs))
+function ebic(ll::Real, dimvals::AbstractVector, ranks::AbstractVector, obs::Int)
+    n1, n2 = dimvals
+    r1, r2 = ranks
+    firstdim = log(obs * n2) * r1 * (2 * n1 - r1)
+    seconddim = log(obs * n1) * r2 * (2 * n2 - r2)
+    return -2 * ll + firstdim + seconddim
+end
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
 
 function rank_selection(data, dimvals; iters=1000, pmax=1)
@@ -31,7 +38,7 @@ function rank_selection(data, dimvals; iters=1000, pmax=1)
         ll = -reg.res.minimum
         ictable[1, i] = aic(ll, num_parameters)
         ictable[2, i] = bic(ll, num_parameters, obs)
-        ictable[3, i] = hqc(ll, num_parameters, obs)
+        ictable[3, i] = ebic(ll, dimvals, selected_rank, obs)
         ictable[4, i] = selected_rank[1]
         ictable[5, i] = selected_rank[2]
         ictable[6, i] = selected_lag
