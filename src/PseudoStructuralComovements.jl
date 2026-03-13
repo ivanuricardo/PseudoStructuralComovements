@@ -20,6 +20,7 @@ export init_alg
 export loglike
 export rand_init
 export comovement_reg
+export rrmar
 
 include("./likelihood_helpers.jl")
 export blockvec
