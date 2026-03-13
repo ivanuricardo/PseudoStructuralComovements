@@ -33,13 +33,13 @@ function rank_selection(data, dimvals; iters=1000, pmax=1)
         selected_lag = selected_rank_lags[3]
 
         num_parameters = system_parameters(dimvals, selected_rank; p=selected_lag)
-        if p == 1
-            reg = rrmar(data, dimvals, selected_rank)
-            ll = -reg.ll
-        else
-            reg = comovement_reg(data, dimvals, selected_rank; iters=iters, p=selected_lag)
-            ll = -reg.res.minimum
-        end
+        # if selected_lag == 1
+        #     reg = rrmar(data, dimvals, selected_rank)
+        #     ll = -reg.ll
+        # else
+        reg = comovement_reg(data, dimvals, selected_rank; iters=iters, p=selected_lag)
+        ll = -reg.res.minimum
+        # end
         ictable[1, i] = aic(ll, num_parameters)
         ictable[2, i] = bic(ll, num_parameters, obs)
         ictable[3, i] = ebic(ll, dimvals, selected_rank, obs)

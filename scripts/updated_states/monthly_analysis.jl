@@ -26,8 +26,8 @@ ut_wages = Float64.(XLSX.getdata(sheet, "C7:BJ15"))'
 # Rearrange to be alphabetical and align with other series
 # ia, il, in, mi, mn, nd, oh, sd, wi
 rearranged_wages = ut_wages[:, [3,1,2,4,5,6,7,8,9]]
-# monthly_wages = denton(rearranged_wages, ut_employment)
-monthly_wages = quarterly_to_monthly(rearranged_wages)
+monthly_wages = denton(rearranged_wages, ut_employment)
+# monthly_wages = quarterly_to_monthly(rearranged_wages)
 wages = transform(monthly_wages)
 
 ser = 1:9
@@ -59,7 +59,8 @@ ser = 5
 Plots.plot(hcat(employment[:, ser], wages[:, ser]))
 
 # Wages are determined by unemployment (positive), hours (negative), and employment (positive)
-res = comovement_reg(matdata, dimvals, [5, 4]; iters=1000, p=1)
+res = comovement_reg(matdata, dimvals, [5, 1]; iters=1000, p=1)
+other_res = rrmar(matdata, dimvals, [5,1])
 # Nothing is significant except the relation between Indiana and Ohio (neighbors)
 # I could e.g., restrict the second dimension to be 1. Then I get two significant coefs
 # however, if I restrict the second dimension to be 1, then the first dimension
