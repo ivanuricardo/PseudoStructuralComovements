@@ -1,12 +1,9 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
-using CSV, Tables, SparseArrays
-using XLSX
+using CSV, Tables, SparseArrays, XLSX
 Random.seed!(20260203)
 include(projectdir("scripts/updated_states/helpers.jl"))
 
-# Without using Michigan or Wisconsin
-# Not sure if I should still keep this series
 rawdata = XLSX.readdata(datadir("./state_indexes/reguib_northcentral.xlsx"), "Sheet1!A2:S459")
 vecdata = Float64.(rawdata[:, 2:end])'
 coincident = vecdata[1:2:end, 232:end]'
@@ -59,8 +56,14 @@ ser = 5
 Plots.plot(hcat(employment[:, ser], wages[:, ser]))
 
 # Wages are determined by unemployment (positive), hours (negative), and employment (positive)
-res = comovement_reg(matdata, dimvals, [5, 1]; iters=1000, p=1)
-other_res = rrmar(matdata, dimvals, [5,1])
+res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
+other_res = rrmar(matdata, dimvals, [2,1])
+
+# save the results
+# save(datadir("updated_states/coincident_results.jld2"), Dict("res" => res))
+# load the results
+# loaded_results = load(datadir("updated_states/coincident_results.jld2"))
+# res = loaded_results["res"]
 # Nothing is significant except the relation between Indiana and Ohio (neighbors)
 # I could e.g., restrict the second dimension to be 1. Then I get two significant coefs
 # however, if I restrict the second dimension to be 1, then the first dimension

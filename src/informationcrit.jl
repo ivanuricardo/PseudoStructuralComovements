@@ -9,25 +9,30 @@ function system_parameters(dimvals, ranks; p=1)
     return first_term + second_term + num_ll1 + num_ll2 + third_term
 end
 
-aic(ll::Real, numpars::Int) = -2 * ll + (2 * numpars)
-bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * log(obs))
-function ebic(ll::Real, dimvals::AbstractVector, ranks::AbstractVector, obs::Int)
+aic_pen(numpars::Int) = 2 * numpars
+aic(ll::Real, numpars::Int) = -2 * ll + aic_pen(numpars)
+bic_pen(numpars::Int, obs::Int) = numpars * log(obs)
+bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + bic_pen(numpars, obs)
+function ebic_pen(dimvals, ranks, obs)
     n1, n2 = dimvals
     r1, r2 = ranks
     firstdim = log(obs * n2) * r1 * (2 * n1 - r1)
     seconddim = log(obs * n1) * r2 * (2 * n2 - r2)
-    return -2 * ll + firstdim + seconddim
+    return firstdim + seconddim
+end
+function ebic(ll::Real, dimvals::AbstractVector, ranks::AbstractVector, obs::Int)
+    return -2 * ll + ebic_pen(dimvals, ranks, obs)
 end
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
 
-function rank_selection(data, dimvals; iters=1000, pmax=1)
+function rank_selection(data, dimvals; iters=1000, pmax=1, num_starts=100, num_selected=10)
 
     obs = size(data, 2)
     ictable = fill(NaN, 6, prod(dimvals) * pmax)
     rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2], 1:pmax))
 
-    # for i = 1:(prod(dimvals) * pmax)
-    @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
+    for i = 1:(prod(dimvals) * pmax)
+    # @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
         selected_rank_lags = collect(rank_grid[i])
         selected_rank = selected_rank_lags[1:2]
         selected_lag = selected_rank_lags[3]
@@ -37,7 +42,7 @@ function rank_selection(data, dimvals; iters=1000, pmax=1)
         #     reg = rrmar(data, dimvals, selected_rank)
         #     ll = -reg.ll
         # else
-        reg = comovement_reg(data, dimvals, selected_rank; iters=iters, p=selected_lag)
+        reg = comovement_reg(data, dimvals, selected_rank; iters=iters, p=selected_lag, num_starts, num_selected)
         ll = -reg.res.minimum
         # end
         ictable[1, i] = aic(ll, num_parameters)
@@ -52,10 +57,47 @@ function rank_selection(data, dimvals; iters=1000, pmax=1)
     aic_sel = ictable[4:end, aicvec]
     bicvec = argmin(ictable[2, :])
     bic_sel = Int.(ictable[4:end, bicvec])
-    hqcvec = argmin(ictable[3, :])
-    hqc_sel = Int.(ictable[4:end, hqcvec])
+    ebicvec = argmin(ictable[3, :])
+    ebic_sel = Int.(ictable[4:end, ebicvec])
 
-    return (; aic_sel, bic_sel, hqc_sel, ictable)
+    return (; aic_sel, bic_sel, ebic_sel, ictable)
+
+end
+
+function rrmar_ic(data, dimvals; pmax=1)
+    obs = size(data, 2)
+    ictable = fill(NaN, 6, prod(dimvals) * pmax)
+    rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2], 1:pmax))
+    for i = 1:(prod(dimvals) * pmax)
+    # @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
+        selected_rank_lags = collect(rank_grid[i])
+        selected_rank = selected_rank_lags[1:2]
+        selected_lag = selected_rank_lags[3]
+
+        num_parameters = system_parameters(dimvals, selected_rank; p=selected_lag)
+        reg = rrmar(data, dimvals, selected_rank)
+        ll = -reg.ll
+        # println(selected_rank)
+        # println(ll)
+        # println(num_parameters)
+        # println(bic_pen(num_parameters, obs))
+        # println(ebic_pen(dimvals, selected_rank, obs))
+        ictable[1, i] = aic(ll, num_parameters)
+        ictable[2, i] = bic(ll, num_parameters, obs)
+        ictable[3, i] = ebic(ll, dimvals, selected_rank, obs)
+        ictable[4, i] = selected_rank[1]
+        ictable[5, i] = selected_rank[2]
+        ictable[6, i] = selected_lag
+    end
+
+    aicvec = argmin(ictable[1, :])
+    aic_sel = ictable[4:end, aicvec]
+    bicvec = argmin(ictable[2, :])
+    bic_sel = Int.(ictable[4:end, bicvec])
+    ebicvec = argmin(ictable[3, :])
+    ebic_sel = Int.(ictable[4:end, ebicvec])
+
+    return (; aic_sel, bic_sel, ebic_sel, ictable)
 
 end
 

@@ -4,18 +4,14 @@ using CSV, Tables, SparseArrays, Distributions, XLSX
 Random.seed!(20260203)
 include(projectdir("scripts/updated_states/helpers.jl"))
 
-state_names = ["IA", "IL", "IN", "MN", "ND", "OH", "SD"]
+state_names = ["IA", "IL", "IN", "MI", "MN", "ND", "OH", "SD", "WI"]
 rawdata = XLSX.readdata(datadir("./state_indexes/reguib_northcentral.xlsx"), "Sheet1!A2:S459")
 vecdata = Float64.(rawdata[:, 2:end])'
-coincident = vecdata[1:2:end, 230:end-2]'
-leading = vecdata[2:2:end, 230:end-2]'
+coincident = vecdata[1:2:end, 278:end-2]'
 
-start_date = 133  # Jan 2001
-covid_start = 12  # Dec 2019
-
-ut_employment = load_series("employment")[start_date:(end-covid_start), :]
-ut_unemployment = load_series("unemployment")[start_date:(end-covid_start), :]
-ut_hours = load_series("hours")[1:(end-covid_start), :]  # already starts in Jan
+ut_employment = load_series("employment")
+ut_unemployment = load_series("unemployment")
+ut_hours = load_series("hours")
 
 employment = transform(ut_employment)
 unemployment = transform(ut_unemployment; type = "diff")
@@ -23,65 +19,63 @@ hours = transform(ut_hours)
 
 file = XLSX.readxlsx(datadir("updated_states/wages.xlsx"))
 sheet = file["Table"]
-ut_wages = Float64.(XLSX.getdata(sheet, "O7:CL13"))'
+ut_wages = Float64.(XLSX.getdata(sheet, "C7:BJ15"))'
 # Rearrange to be alphabetical and align with other series
-# iowa, illinois, indiana, minnesota, north dakota, ohio, south dakota
-rearranged_wages = ut_wages[:, [3,1,2,4,5,6,7]]
-monthly_wages = denton(rearranged_wages, ut_employment)
+# iowa, illinois, indiana, michigan, minnesota, north dakota, ohio, south dakota, wisconsin
+rearranged_wages = ut_wages[:, [3,1,2,4,5,6,7,8,9]]
+# monthly_wages = denton(rearranged_wages, ut_employment)
+monthly_wages = quarterly_to_monthly(rearranged_wages)
 wages = transform(monthly_wages)
 
-catted_data = cat(unemployment', hours', employment', wages'; dims = 3)
+# catted_data = cat(wages', hours', unemployment', employment'; dims = 3)
+catted_data = cat(employment', unemployment', hours', wages'; dims = 3)
 tendata = permutedims(catted_data, (1,3,2))
-perm_states = [7,4,5,1,6,2,3]
-# SD, MN, ND, IA, OH, IL, IN
-perm_states = [2,3,5,6]
+# Corresponds to the perm WI, ND, OH, MN, MI, IA, SD, IL, IN
+perm_states = [9, 6, 7, 5, 4, 1, 8, 2, 3]
+# perm_states = [2,3,5,6]
 # IA, IL, IN, MN, SD, ND, OH
 rearranged_tendata = tendata[perm_states, :, :]
 matdata = vectorize(rearranged_tendata)
 
 n1, n2, obs = size(tendata)
 dimvals = [n1, n2]
-res = comovement_reg(matdata, dimvals, [4, 1]; iters=1000, p=1)
-# save the results
-# save(datadir("updated_states/coincident_results.jld2"), Dict("res" => res))
+current_min = copy(res.res.minimum)
+for i in 1:5
+    @time res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
+    if res.res.minimum <= current_min
+        println("new minimum is $(res.res.minimum)")
+        save(datadir("updated_states/coincident_results.jld2"), Dict("res" => res))
+        current_min = copy(res.res.minimum)
+    end
+end
 # load the results
 loaded_results = load(datadir("updated_states/coincident_results.jld2"))
-res = loaded_results["res"]
+other_res = loaded_results["res"]
 
 # julia> res.delta_est
-# 7×5 Matrix{Float64}:
-# IA, IL, MN, OH, SD, ND, IN
-#   1.0              0.0              0.0              0.0              0.0
-#   0.0              1.0              0.0              0.0              0.0
-#   0.0              0.0              1.0              0.0              0.0
-#   0.0              0.0              0.0              1.0              0.0
-#   0.0              0.0              0.0              0.0              1.0
-#   0.110(0.101)     0.022(0.096)    -0.084(0.113)     0.074(0.080)     0.036(0.085)
-#  -0.475(0.094)    -0.611(0.090)    -0.198(0.105)    -0.635(0.075)    -0.931(0.079)
-
-# South Dakota co-moves Indiana, not so much with Illinois
-# Minnesota co-moves with Indiana, not so much with Illinois
-# North Dakota doesn't co-move with any
-# Iowa co-moves with Indiana
-# Ohio co-moves with Indiana
-# So there seems to be a grouping of countries with
-# Ohio, Indiana, Iowa, Minnesota, South Dakota
-# North Dakota and Illinois don't seem to co-move with anything
+# 9×7 Matrix{Float64}:
+#   1.0         0.0         0.0         0.0          0.0        0.0         0.0
+#   0.0         1.0         0.0         0.0          0.0        0.0         0.0
+#   0.0         0.0         1.0         0.0          0.0        0.0         0.0
+#   0.0         0.0         0.0         1.0          0.0        0.0         0.0
+#   0.0         0.0         0.0         0.0          1.0        0.0         0.0
+#   0.0         0.0         0.0         0.0          0.0        1.0         0.0
+#   0.0         0.0         0.0         0.0          0.0        0.0         1.0
+#   0.0823831  -0.0923376   0.0757538  -0.00634231  -0.110979   0.0709135  -0.338586
+#  -0.942411   -1.18696    -0.423185   -0.566303    -0.172774  -0.61059    -0.601133
 
 
 # julia> res.gamma_est
 # 4×3 Matrix{Float64}:
-#   1.0              0.0               0.0
-#   0.0              1.0               0.0
-#   0.0              0.0               1.0
-#  -0.599(0.057)     58.619(6.562)    -0.258(0.412)
+#   1.0        0.0     0.0
+#   0.0        1.0     0.0
+#   0.0        0.0     1.0
+#  -1.68575  105.162  -0.348001
 
-# order is unemployment, hours, wages, employment
+# order is wages, unemployment, hours, employment
+# wages co-moves with employment
 # unemployment co-moves with employment
-# hours co-moves with employment
-# wages do not co-move with employment
-# indicator
-
+# hours do not co-move with employment
 
 ################################################################################
 # Plots
@@ -92,44 +86,40 @@ res = loaded_results["res"]
 # coincident order is 
 # IA, IL, IN, MI, MN, ND, OH, SD, WI
 # we omit MI and WI
-# factors = kron(res.u4_est, res.u3_est)' * matdata
-factors = kron(res.u4_est, I(4))' * matdata
-u1 = nullspace(res.delta_est') * inv(nullspace(res.delta_est')[6:end, :])
+factors = kron(res.u4_est, res.u3_est)' * matdata
+# factors = kron(res.u4_est, I(4))' * matdata
+u1 = nullspace(res.delta_est') * inv(nullspace(res.delta_est')[8:end, :])
+# u2 = nullspace(res.gamma_est') * inv(nullspace(res.gamma_est')[4, 1])
+# coincident_inds = kron(u2, u1) * factors
 coincident_inds = u1 * factors
-# permed_cis = coincident_inds[invperm(perm_states), :]
-permed_cis = factors[invperm(perm_states), :]
+permed_cis = coincident_inds[invperm(perm_states), :]
+# permed_cis = factors[invperm(perm_states), :]
 
 save(datadir("updated_states/coincident_series.jld2"), Dict("cis" => permed_cis))
 
 # Iowa
 Plots.plot(demean_standardize(coincident[:, 1]), label = "Crone and Clayton-Matthews", title = "Iowa")
-Plots.plot!(demean_standardize(permed_cis[1, :]), label = "Pseudo-Structural")
-Plots.plot!(demean_standardize(leading[:, 1]), label = "Leading Indicator")
-cor(coincident[:, 1], permed_cis[1, :])
-cor(leading[:, 1], permed_cis[1, :])
-cor(leading[:, 1], coincident[:, 1])
+Plots.plot!(-demean_standardize(permed_cis[1, :]), label = "Pseudo-Structural")
+cor(coincident[:, 1], -permed_cis[1, :])
 
 # Illinois
 Plots.plot(demean_standardize(coincident[:, 2]), label = "Crone and Clayton-Matthews", title = "Illinois")
-Plots.plot!(demean_standardize(permed_cis[2, :]), label = "Pseudo-Structural")
-Plots.plot!(demean_standardize(leading[:, 2]), label = "Leading Indicator")
+Plots.plot!(-demean_standardize(permed_cis[2, :]), label = "Pseudo-Structural")
 cor(coincident[:, 2], permed_cis[2, :])
-cor(leading[:, 2], permed_cis[2, :])
-cor(leading[:, 2], coincident[:, 2])
 
 # Indiana
 Plots.plot(demean_standardize(coincident[:, 3]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[3, :]), label = "Pseudo-Structural", title = "Indiana")
+Plots.plot!(-demean_standardize(permed_cis[3, :]), label = "Pseudo-Structural", title = "Indiana")
 cor(coincident[:, 3], permed_cis[3, :])
 
 # Minnesota
 Plots.plot(demean_standardize(coincident[:, 5]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
+Plots.plot!(-demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
 cor(coincident[:, 5], permed_cis[4, :])
 
 # North Dakota
 Plots.plot(demean_standardize(coincident[:, 6]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "North Dakota")
+Plots.plot!(-demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "North Dakota")
 cor(coincident[:, 6], permed_cis[5, :])
 # Plots.plot!(demean_standardize(employment[:, 5]), label = "Employment")
 # ND experienced an oil boom between 2006, peaked in 2012, and crashed in 2014.
@@ -138,12 +128,12 @@ cor(coincident[:, 6], permed_cis[5, :])
 
 # Ohio
 Plots.plot(demean_standardize(coincident[:, 7]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "Ohio")
+Plots.plot!(-demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "Ohio")
 cor(coincident[:, 7], permed_cis[6, :])
 
 # South Dakota
 Plots.plot(demean_standardize(coincident[:, 8]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "South Dakota")
+Plots.plot!(-demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "South Dakota")
 cor(coincident[:, 8], permed_cis[7, :])
 
 # Delta method using the asymptotic variance for delta and gamma

@@ -59,6 +59,7 @@ export aic
 export bic
 export hqc
 export rank_selection
+export rrmar_ic
 
 include("simulation_helpers.jl")
 export isstable

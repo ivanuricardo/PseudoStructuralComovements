@@ -199,35 +199,33 @@ function loglike_calc(theta, resp, pred, dimvals, ranks; p=1)
     end
 
     X = sparse_omega * ll
-    invX = try
-        inv(X)
+    Xfact = try
+        lu(X)
     catch e
         isa(e, SingularException) || rethrow(e)
         return 1e9
     end
-    precision_matrix = invX' * invX
-    sparse_precision = sparse(precision_matrix)
 
-    sse = 0.0
-
-    for i = 1:obs
-        yt = @view resp[:, i]
+    resid_buf = zeros(eltype(theta), size(X, 1))
+    z_buf     = similar(resid_buf)
+    sse = 0
+    for i in 1:obs
+        yt   = @view resp[:, i]
         yt_m1 = @view pred[:, i]
-        resid = sparse_omega * yt - sparse_pi * yt_m1
-        sse += dot(resid, sparse_precision * resid)
+        mul!(resid_buf, sparse_omega, yt)
+        mul!(resid_buf, sparse_pi, yt_m1, -1.0, 1.0)
+        ldiv!(z_buf, Xfact, resid_buf)
+        sse += dot(z_buf, z_buf)
     end
 
-    det_term1 = det(sigma1)
-    det_term2 = det(sigma2)
-    if det_term1 <= 0.0 || det_term2 <= 0.0
-        # quadratic penalty on negative/zero dets
-        pen = 1e6 * ((min(det_term1, 0.0))^2 + (min(det_term2, 0.0))^2)
+    d1 = diag(ll1)
+    d2 = diag(ll2)
+    if any(x -> x <= 0.0, d1) || any(x -> x <= 0.0, d2)
+        pen = 1e6 * (sum(x -> min(x, 0.0)^2, d1) + sum(x -> min(x, 0.0)^2, d2))
         return 0.5 * sse + pen
     end
-
-    # no need for omegas because det = 1
-    logdet_term1 = dimvals[2] * log(det_term1)
-    logdet_term2 = dimvals[1] * log(det_term2)
+    logdet_term1 = dimvals[2] * 2 * sum(log, d1)   # log(det(sigma)) = 2 * sum(log(diag(L)))
+    logdet_term2 = dimvals[1] * 2 * sum(log, d2)
 
     return 0.5 * ((obs) * (logdet_term1 + logdet_term2) + sse)
 end
