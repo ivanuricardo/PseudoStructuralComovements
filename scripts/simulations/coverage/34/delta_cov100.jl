@@ -27,11 +27,10 @@ over_cov = fill(NaN, 2, sims)
 
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_rank, obs; A=coef, burnin, matrix_err=true)
-    cen_data = data.data .- mean(data.data, dims=2)
 
-    correct_reg = comovement_reg(cen_data, dimvals, true_rank; iters=1000)
-    over_reg = comovement_reg(cen_data, dimvals, over_rank; iters=1000)
-    under_reg = comovement_reg(cen_data, dimvals, under_rank; iters=1000)
+    correct_reg = comovement_reg(data.data, dimvals, true_rank; iters=1000)
+    over_reg = comovement_reg(data.data, dimvals, over_rank; iters=1000)
+    under_reg = comovement_reg(data.data, dimvals, under_rank; iters=1000)
 
     correct_delta[:, i] = correct_reg.delta_est[2:end]
     under_delta[:, i] = under_reg.delta_est[2:end]

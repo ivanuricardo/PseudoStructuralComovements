@@ -111,7 +111,7 @@ function init_alg(data, dimvals, ranks; p=1)
     N2_r2 = dimvals[2] - ranks[2]
     ten_data = reshape(data, (dimvals[1], dimvals[2], obs))
     perm_data = permutedims(ten_data, (3, 1, 2))
-    (u1_est, u2_est, u3_est, u4_est, sigma1, sigma2) = lock(R_LOCK) do
+    (u1_est, u2_est, u3_est, u4_est, sigma1, sigma2, s1, s2) = lock(R_LOCK) do
         rrmar_init = R"""
         d1 = $(dimvals[1])
         d2 = $(dimvals[2])
@@ -119,35 +119,34 @@ function init_alg(data, dimvals, ranks; p=1)
         r2 = $(ranks[2])
         data <- $(perm_data)
         est <- matAR.RR.est(data, method = "RRMLE", k1 = r1, k2 = r2, tol = 1e-08)
+        s1 <- t(est$loading$U1) %*% est$A1 %*% est$loading$V1
+        s2 <- t(est$loading$U2) %*% est$A2 %*% est$loading$V2
         """
-        @rget est
+        @rget est s1 s2
         (
             est[:loading][:U1][:, 1:ranks[1]],   # u1_est
             est[:loading][:U2][:, 1:ranks[2]],   # u2_est
             est[:loading][:V1][:, 1:ranks[1]],   # u3_est
             est[:loading][:V2][:, 1:ranks[2]],   # u4_est
             est[:Sig1],                           # sigma1
-            est[:Sig2]                            # sigma2
+            est[:Sig2],                            # sigma2
+            s1,
+            s2
         )
     end
 
-    u3_new_prime = u1_est[(N1_r1+1):end, :] * u3_est'
-    if dimvals[1] == ranks[1]
-        perturb!(u3_new_prime)
-    end
-    u3 = u3_new_prime / u3_new_prime[1]
-    u3 = copy(u3')
+    q1 = inv(u1_est[(N1_r1+1):end, :])
+    q2 = inv(u2_est[(N2_r2+1):end, :])
+    u1_star = u1_est * q1
+    u2_star = u2_est * q2
+    u3_star = u3_est * s1[1:ranks[1], 1:ranks[1]] * inv(q1)'
+    u4_star = u4_est * s2[1:ranks[2], 1:ranks[2]] * inv(q2)'
 
-    u4_new = u4_est * u2_est[(N2_r2+1):end, :]'
-    u4 = u4_new * u3_new_prime[1]
+    delta_star = -u1_star[1:N1_r1, :]'
+    gamma_star = -u2_star[1:N2_r2, :]'
 
-    delta = nullspace(u1_est')
-    delta_rot = rotate_u!(delta)
-    delta_star = delta_rot[(N1_r1+1):end, :]
-
-    gamma = nullspace(u2_est')
-    gamma_rot = rotate_u!(gamma)
-    gamma_star = gamma_rot[(N2_r2+1):end, :]
+    u3 = u3_star / u3_star[1]
+    u4 = u4_star * u3_star[1]
 
     chol1 = cholesky(Symmetric(sigma1))
     ll1 = chol1.L
