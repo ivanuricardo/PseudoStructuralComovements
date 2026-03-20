@@ -39,15 +39,7 @@ matdata = vectorize(rearranged_tendata)
 
 n1, n2, obs = size(tendata)
 dimvals = [n1, n2]
-current_min = copy(res.res.minimum)
-for i in 1:5
-    @time res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
-    if res.res.minimum <= current_min
-        println("new minimum is $(res.res.minimum)")
-        save(datadir("updated_states/coincident_results.jld2"), Dict("res" => res))
-        current_min = copy(res.res.minimum)
-    end
-end
+res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
 # load the results
 loaded_results = load(datadir("updated_states/coincident_results.jld2"))
 other_res = loaded_results["res"]

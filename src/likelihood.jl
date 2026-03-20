@@ -260,12 +260,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
 
     for i in 1:num_starts
-        if i == 1
-            both_init = copy(some_init)
-        else
-            #=both_init = rand_init(dimvals, ranks; p)=#
-            both_init = copy(some_init) .+ (0.01 * i) .* randn(length(some_init))
-        end
+        both_init = copy(some_init) .+ 0.01 .* randn(length(some_init))
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
 
@@ -342,7 +337,6 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
     if p != 1 && expected != nrows
         data = companion_data(data, p)
     end
-    data = data .- mean(data, dims = 2)
 
     perm_resp = data[:, 2:end]
     pred = data[:, 1:(end-1)] .- mean(data[:, 1:(end-1)])

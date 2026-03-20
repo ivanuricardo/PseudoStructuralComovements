@@ -23,8 +23,8 @@ ut_wages = Float64.(XLSX.getdata(sheet, "C7:BJ15"))'
 # Rearrange to be alphabetical and align with other series
 # ia, il, in, mi, mn, nd, oh, sd, wi
 rearranged_wages = ut_wages[:, [3,1,2,4,5,6,7,8,9]]
-monthly_wages = denton(rearranged_wages, ut_employment)
-# monthly_wages = quarterly_to_monthly(rearranged_wages)
+# monthly_wages = denton(rearranged_wages, ut_employment)
+monthly_wages = quarterly_to_monthly(rearranged_wages)
 wages = transform(monthly_wages)
 
 ser = 1:9
@@ -47,6 +47,7 @@ matdata = vectorize(rearranged_tendata)
 n1, n2, obs = size(rearranged_tendata)
 dimvals = [n1, n2]
 icest = rank_selection(matdata, dimvals; iters=1000, pmax=1)
+icest = rrmar_ic(matdata, dimvals)
 # aic selects (7,4) with one lag
 # bic selects (7,3) with one lag
 # hqc selects (7,3) with one lag

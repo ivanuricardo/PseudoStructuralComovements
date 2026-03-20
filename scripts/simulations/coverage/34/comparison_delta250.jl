@@ -46,7 +46,7 @@ rrmar_ll = fill(NaN, 1, sims)
     correct_rrmar[:, i] = rrmar_correct.delta_est[2:end]
     under_rrmar[:, i] = rrmar_under.delta_est[2:end]
     over_rrmar[:, i] = rrmar_over.delta_est[2:end]
-    rrmar_ll = rrmar_correct.ll
+    rrmar_ll[i] = rrmar_correct.ll
 
 end
 
@@ -71,7 +71,7 @@ StatsPlots.density!(under_rrmar[1, :]; linewidth=3)
 StatsPlots.density!(over_rrmar[1, :]; linewidth=3)
 vline!([delta_true[2]]; linewidth=3)
 
-h2 = StatsPlots.density(
+h2 = StatsPlots.density!(
     correct_delta[1, :];
     legend=false,
     ylabel="Density",

@@ -20,10 +20,12 @@ u4_true = coef.u4
 correct_delta = fill(NaN, 2, sims)
 under_delta = fill(NaN, 2, sims)
 over_delta = fill(NaN, 2, sims)
+ps_ll = fill(NaN, 1, sims)
 
 correct_rrmar = fill(NaN, 2, sims)
 under_rrmar = fill(NaN, 2, sims)
 over_rrmar = fill(NaN, 2, sims)
+rrmar_ll = fill(NaN, 1, sims)
 
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_rank, obs; A=coef, burnin, matrix_err=true)
@@ -39,14 +41,16 @@ over_rrmar = fill(NaN, 2, sims)
     correct_delta[:, i] = correct_reg.delta_est[2:end]
     under_delta[:, i] = under_reg.delta_est[2:end]
     over_delta[:, i] = over_reg.delta_est[2:end]
+    ps_ll[i] = correct_reg.res.minimum
 
     correct_rrmar[:, i] = rrmar_correct.delta_est[2:end]
     under_rrmar[:, i] = rrmar_under.delta_est[2:end]
     over_rrmar[:, i] = rrmar_over.delta_est[2:end]
+    rrmar_ll[i] = rrmar_correct.ll
 
 end
 
-save(datadir("coverage/34/delta_comparison_results100.jld2"), Dict(
+save(datadir("coverage/34/delta_comparison_results250.jld2"), Dict(
     "correct_delta" => correct_delta,
     "under_delta" => under_delta,
     "over_delta" => over_delta,
