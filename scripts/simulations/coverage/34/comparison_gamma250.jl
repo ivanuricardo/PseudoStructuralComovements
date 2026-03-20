@@ -3,13 +3,13 @@ using DrWatson
 Random.seed!(20250723)
 
 dimvals = [3, 4]
-true_rank = [2, 2]
-under_rank = [2, 1]
-over_rank = [2, 3]
+true_rank = [2, 3]
+under_rank = [1, 3]
+over_rank = [3, 3]
 
 sims = 1000
 burnin = 50
-obs = 100 + burnin
+obs = 250 + burnin
 
 coef = generate_rrmar_coef(dimvals, true_rank)
 delta_true = coef.delta
@@ -17,15 +17,15 @@ gamma_true = coef.gamma
 u3_true = coef.u3
 u4_true = coef.u4
 
-correct_delta = fill(NaN, 2, sims)
-under_delta = fill(NaN, 2, sims)
-over_delta = fill(NaN, 2, sims)
+correct_gamma = fill(NaN, 3, sims)
+under_gamma = fill(NaN, 3, sims)
+over_gamma = fill(NaN, 3, sims)
 ps_ll = fill(NaN, 1, sims)
 comove_iters = fill(NaN, 1, sims)
 
-correct_rrmar = fill(NaN, 2, sims)
-under_rrmar = fill(NaN, 2, sims)
-over_rrmar = fill(NaN, 2, sims)
+correct_rrmar = fill(NaN, 3, sims)
+under_rrmar = fill(NaN, 3, sims)
+over_rrmar = fill(NaN, 3, sims)
 rrmar_ll = fill(NaN, 1, sims)
 
 @showprogress Threads.@threads for i = 1:sims
@@ -39,27 +39,27 @@ rrmar_ll = fill(NaN, 1, sims)
     rrmar_over = rrmar(data.data, dimvals, over_rank)
     rrmar_under = rrmar(data.data, dimvals, under_rank)
 
-    correct_delta[:, i] = correct_reg.delta_est[2:end]
-    under_delta[:, i] = under_reg.delta_est[2:end]
-    over_delta[:, i] = over_reg.delta_est[2:end]
+    correct_gamma[:, i] = correct_reg.gamma_est[2:end]
+    under_gamma[:, i] = under_reg.gamma_est[2:end]
+    over_gamma[:, i] = over_reg.gamma_est[2:end]
     ps_ll[i] = correct_reg.res.minimum
-    comove_iters[i] = correct_reg.res.iters
+    comove_iters[i] = correct_reg.res.iterations
 
-    correct_rrmar[:, i] = rrmar_correct.delta_est[2:end]
-    under_rrmar[:, i] = rrmar_under.delta_est[2:end]
-    over_rrmar[:, i] = rrmar_over.delta_est[2:end]
+    correct_rrmar[:, i] = rrmar_correct.gamma_est[2:end]
+    under_rrmar[:, i] = rrmar_under.gamma_est[2:end]
+    over_rrmar[:, i] = rrmar_over.gamma_est[2:end]
     rrmar_ll[i] = rrmar_correct.ll
 
 end
 
-save(datadir("coverage/34/delta_comparison_results250.jld2"), Dict(
-    "correct_delta" => correct_delta,
-    "under_delta" => under_delta,
-    "over_delta" => over_delta,
+save(datadir("coverage/34/gamma_comparison_results250.jld2"), Dict(
+    "correct_gamma" => correct_gamma,
+    "under_gamma" => under_gamma,
+    "over_gamma" => over_gamma,
     "correct_rrmar" => correct_rrmar,
     "under_rrmar" => under_rrmar,
     "over_rrmar" => over_rrmar,
-    "delta_true" => delta_true,
+    "gamma_true" => gamma_true,
     "ps_ll" => ps_ll,
     "rrmar_ll" => rrmar_ll,
 ))
@@ -73,15 +73,15 @@ h1 = StatsPlots.density(
 )
 StatsPlots.density!(under_rrmar[1, :]; linewidth=3)
 StatsPlots.density!(over_rrmar[1, :]; linewidth=3)
-vline!([delta_true[2]]; linewidth=3)
+vline!([gamma_true[2]]; linewidth=3)
 
 h2 = StatsPlots.density(
-    correct_delta[1, :];
+    correct_gamma[1, :];
     legend=false,
     ylabel="Density",
     linewidth=3,
     yguidefont=16   # <-- increase y-axis label font size
 )
-StatsPlots.density!(under_delta[1, :]; linewidth=3)
-StatsPlots.density!(over_delta[1, :]; linewidth=3)
-vline!([delta_true[2]]; linewidth=3)
+StatsPlots.density!(under_gamma[1, :]; linewidth=3)
+StatsPlots.density!(over_gamma[1, :]; linewidth=3)
+vline!([gamma_true[2]]; linewidth=3)
