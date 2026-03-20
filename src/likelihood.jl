@@ -338,9 +338,10 @@ function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=
         data = companion_data(data, p)
     end
 
-    perm_resp = data[:, 2:end]
-    pred = data[:, 1:(end-1)] .- mean(data[:, 1:(end-1)])
-    resp = perm_resp .- mean(perm_resp, dims=2)
+    resp_before_demean = data[:, 2:end]
+    pred_before_demean = data[:, 1:end-1]
+    resp = resp_before_demean .- mean(resp_before_demean, dims = 2)
+    pred = pred_before_demean .- mean(pred_before_demean, dims = 2)
 
     all_results = []
     count = 0
