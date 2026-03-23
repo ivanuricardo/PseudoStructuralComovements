@@ -27,47 +27,47 @@ rearranged_wages = ut_wages[:, [3,1,2,4,5,6,7,8,9]]
 monthly_wages = quarterly_to_monthly(rearranged_wages)
 wages = transform(monthly_wages)
 
-# catted_data = cat(wages', hours', unemployment', employment'; dims = 3)
 catted_data = cat(employment', unemployment', hours', wages'; dims = 3)
 tendata = permutedims(catted_data, (1,3,2))
 # Corresponds to the perm WI, ND, OH, MN, MI, IA, SD, IL, IN
 # perm_states = [9, 6, 7, 5, 4, 1, 8, 2, 3]
-# Corresponds to the perm IA, IN, MI, ND, OH, SD, WI, MN, ND
-perm_states = [1, 3, 4, 2, 5, 8, 9, 7, 6]
+# Corresponds to the perm ND, IN, MI, MN, OH, SD, WI, IL, IA
+perm_states = [6, 3, 4, 5, 7, 8, 9, 2, 1]
 rearranged_tendata = tendata[perm_states, :, :]
 matdata = vectorize(rearranged_tendata)
 
 n1, n2, obs = size(tendata)
 dimvals = [n1, n2]
 res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
+# save(datadir("updated_states/coincident_results.jld2"), Dict("res" => res))
 # load the results
 loaded_results = load(datadir("updated_states/coincident_results.jld2"))
-other_res = loaded_results["res"]
+res = loaded_results["res"]
 
 # julia> res.delta_est
 # 9×7 Matrix{Float64}:
-#   1.0         0.0         0.0         0.0          0.0        0.0         0.0
-#   0.0         1.0         0.0         0.0          0.0        0.0         0.0
-#   0.0         0.0         1.0         0.0          0.0        0.0         0.0
-#   0.0         0.0         0.0         1.0          0.0        0.0         0.0
-#   0.0         0.0         0.0         0.0          1.0        0.0         0.0
-#   0.0         0.0         0.0         0.0          0.0        1.0         0.0
-#   0.0         0.0         0.0         0.0          0.0        0.0         1.0
-#   0.0823831  -0.0923376   0.0757538  -0.00634231  -0.110979   0.0709135  -0.338586
-#  -0.942411   -1.18696    -0.423185   -0.566303    -0.172774  -0.61059    -0.601133
+#   1.0        0.0        0.0        0.0         0.0        0.0         0.0
+#   0.0        1.0        0.0        0.0         0.0        0.0         0.0
+#   0.0        0.0        1.0        0.0         0.0        0.0         0.0
+#   0.0        0.0        0.0        1.0         0.0        0.0         0.0
+#   0.0        0.0        0.0        0.0         1.0        0.0         0.0
+#   0.0        0.0        0.0        0.0         0.0        1.0         0.0
+#   0.0        0.0        0.0        0.0         0.0        0.0         1.0
+#  -0.117196  -0.106524  -0.232348  -0.0724497  -0.403265   0.0258083  -0.0287248
+#  -0.312692  -1.65608   -1.94897   -0.929204   -0.99046   -0.692681   -1.54464
 
 
 # julia> res.gamma_est
 # 4×3 Matrix{Float64}:
-#   1.0        0.0     0.0
-#   0.0        1.0     0.0
-#   0.0        0.0     1.0
-#  -1.68575  105.162  -0.348001
+#   1.0        0.0      0.0
+#   0.0        1.0      0.0
+#   0.0        0.0      1.0
+#  -0.632952  70.5833  -0.161184
 
-# order is wages, unemployment, hours, employment
-# wages co-moves with employment
-# unemployment co-moves with employment
-# hours do not co-move with employment
+# order is employment, unemployment, hours, wages
+# employment co-moves with wages
+# unemployment co-moves with wages
+# hours do not co-move with wages
 
 ################################################################################
 # Plots
@@ -91,27 +91,27 @@ save(datadir("updated_states/coincident_series.jld2"), Dict("cis" => permed_cis)
 
 # Iowa
 Plots.plot(demean_standardize(coincident[:, 1]), label = "Crone and Clayton-Matthews", title = "Iowa")
-Plots.plot!(-demean_standardize(permed_cis[1, :]), label = "Pseudo-Structural")
-cor(coincident[:, 1], -permed_cis[1, :])
+Plots.plot!(demean_standardize(permed_cis[1, :]), label = "Pseudo-Structural")
+cor(coincident[:, 1], permed_cis[1, :])
 
 # Illinois
 Plots.plot(demean_standardize(coincident[:, 2]), label = "Crone and Clayton-Matthews", title = "Illinois")
-Plots.plot!(-demean_standardize(permed_cis[2, :]), label = "Pseudo-Structural")
+Plots.plot!(demean_standardize(permed_cis[2, :]), label = "Pseudo-Structural")
 cor(coincident[:, 2], permed_cis[2, :])
 
 # Indiana
 Plots.plot(demean_standardize(coincident[:, 3]), label = "Crone and Clayton-Matthews")
-Plots.plot!(-demean_standardize(permed_cis[3, :]), label = "Pseudo-Structural", title = "Indiana")
+Plots.plot!(demean_standardize(permed_cis[3, :]), label = "Pseudo-Structural", title = "Indiana")
 cor(coincident[:, 3], permed_cis[3, :])
 
 # Minnesota
 Plots.plot(demean_standardize(coincident[:, 5]), label = "Crone and Clayton-Matthews")
-Plots.plot!(-demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
+Plots.plot!(demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
 cor(coincident[:, 5], permed_cis[4, :])
 
 # North Dakota
 Plots.plot(demean_standardize(coincident[:, 6]), label = "Crone and Clayton-Matthews")
-Plots.plot!(-demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "North Dakota")
+Plots.plot!(demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "North Dakota")
 cor(coincident[:, 6], permed_cis[5, :])
 # Plots.plot!(demean_standardize(employment[:, 5]), label = "Employment")
 # ND experienced an oil boom between 2006, peaked in 2012, and crashed in 2014.
@@ -120,12 +120,12 @@ cor(coincident[:, 6], permed_cis[5, :])
 
 # Ohio
 Plots.plot(demean_standardize(coincident[:, 7]), label = "Crone and Clayton-Matthews")
-Plots.plot!(-demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "Ohio")
+Plots.plot!(demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "Ohio")
 cor(coincident[:, 7], permed_cis[6, :])
 
 # South Dakota
 Plots.plot(demean_standardize(coincident[:, 8]), label = "Crone and Clayton-Matthews")
-Plots.plot!(-demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "South Dakota")
+Plots.plot!(demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "South Dakota")
 cor(coincident[:, 8], permed_cis[7, :])
 
 # Delta method using the asymptotic variance for delta and gamma
