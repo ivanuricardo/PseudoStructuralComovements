@@ -32,8 +32,8 @@ catted_data = cat(employment', unemployment', hours', wages'; dims = 3)
 tendata = permutedims(catted_data, (1,3,2))
 # Corresponds to the perm WI, ND, OH, MN, MI, IA, SD, IL, IN
 # perm_states = [9, 6, 7, 5, 4, 1, 8, 2, 3]
-# Corresponds to the perm IA, IN, MI, MN, OH, SD, WI, IL, ND
-perm_states = [1, 3, 4, 5, 7, 8, 9, 2, 6]
+# Corresponds to the perm IA, IN, MI, ND, OH, SD, WI, MN, ND
+perm_states = [1, 3, 4, 2, 5, 8, 9, 7, 6]
 rearranged_tendata = tendata[perm_states, :, :]
 matdata = vectorize(rearranged_tendata)
 

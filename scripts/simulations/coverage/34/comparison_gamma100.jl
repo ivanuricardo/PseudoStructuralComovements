@@ -52,7 +52,7 @@ rrmar_ll = fill(NaN, 1, sims)
 
 end
 
-save(datadir("coverage/34/gamma_comparison_results250.jld2"), Dict(
+save(datadir("coverage/34/gamma_comparison_results100.jld2"), Dict(
     "correct_gamma" => correct_gamma,
     "under_gamma" => under_gamma,
     "over_gamma" => over_gamma,
@@ -62,6 +62,7 @@ save(datadir("coverage/34/gamma_comparison_results250.jld2"), Dict(
     "gamma_true" => gamma_true,
     "ps_ll" => ps_ll,
     "rrmar_ll" => rrmar_ll,
+    "comove_iters" => comove_iters,
 ))
 
 h1 = StatsPlots.density(

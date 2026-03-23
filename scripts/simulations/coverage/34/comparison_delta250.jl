@@ -43,7 +43,7 @@ rrmar_ll = fill(NaN, 1, sims)
     under_delta[:, i] = under_reg.delta_est[2:end]
     over_delta[:, i] = over_reg.delta_est[2:end]
     ps_ll[i] = correct_reg.res.minimum
-    comove_iters[i] = correct_reg.res.iters
+    comove_iters[i] = correct_reg.res.iterations
 
     correct_rrmar[:, i] = rrmar_correct.delta_est[2:end]
     under_rrmar[:, i] = rrmar_under.delta_est[2:end]
@@ -62,6 +62,7 @@ save(datadir("coverage/34/delta_comparison_results250.jld2"), Dict(
     "delta_true" => delta_true,
     "ps_ll" => ps_ll,
     "rrmar_ll" => rrmar_ll,
+    "comove_iters" => comove_iters,
 ))
 
 h1 = StatsPlots.density(

@@ -38,10 +38,6 @@ function rank_selection(data, dimvals; iters=1000, pmax=1, num_starts=100, num_s
         selected_lag = selected_rank_lags[3]
 
         num_parameters = system_parameters(dimvals, selected_rank; p=selected_lag)
-        # if selected_lag == 1
-        #     reg = rrmar(data, dimvals, selected_rank)
-        #     ll = -reg.ll
-        # else
         reg = comovement_reg(data, dimvals, selected_rank; iters=iters, p=selected_lag, num_starts, num_selected)
         ll = -reg.res.minimum
         # end
@@ -77,11 +73,6 @@ function rrmar_ic(data, dimvals; pmax=1)
         num_parameters = system_parameters(dimvals, selected_rank; p=selected_lag)
         reg = rrmar(data, dimvals, selected_rank)
         ll = -reg.ll
-        # println(selected_rank)
-        # println(ll)
-        # println(num_parameters)
-        # println(bic_pen(num_parameters, obs))
-        # println(ebic_pen(dimvals, selected_rank, obs))
         ictable[1, i] = aic(ll, num_parameters)
         ictable[2, i] = bic(ll, num_parameters, obs)
         ictable[3, i] = ebic(ll, dimvals, selected_rank, obs)
