@@ -1,23 +1,21 @@
 using DrWatson
 @quickactivate :PseudoStructuralComovements
-using RCall
-R"""
-source("r_helpers.R")
-"""
 Random.seed!(20250723)
 
-sims = 100
+sims = 1000
 dimvals = [3, 4]
 ranks = [1, 4]
 snr = 0.7
 
 smallaic14 = fill(NaN, 2, sims)
 smallbic14 = fill(NaN, 2, sims)
+smallebic14 = fill(NaN, 2, sims)
+smallbench14 = fill(NaN, 2, sims)
+
 medaic14 = fill(NaN, 2, sims)
 medbic14 = fill(NaN, 2, sims)
-
-smallbic14_bench = fill(NaN, 2, sims)
-medbic14_bench = fill(NaN, 2, sims)
+medebic14 = fill(NaN, 2, sims)
+medbench14 = fill(NaN, 2, sims)
 
 burnin = 100
 smallobs = 100
@@ -27,77 +25,61 @@ A = generate_rrmar_coef(dimvals, ranks)
 
 @showprogress Threads.@threads for s = 1:sims
     medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin, matrix_err=true)
-    med_bench_data = reshape(medmar.data', (medobs, dimvals[1], dimvals[2]))
     smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin, matrix_err=true)
-    small_bench_data = reshape(smallmar.data', (smallobs, dimvals[1], dimvals[2]))
 
     smallicest = rank_selection(smallmar.data, dimvals; iters=1000)
+    smallbench = rrmar_ic(smallmar.data, dimvals)
     smallaic14[:, s] .= smallicest.aic_sel[1:2]
     smallbic14[:, s] .= smallicest.bic_sel[1:2]
+    smallebic14[:, s] .= smallicest.ebic_sel[1:2]
+    smallbench14[:, s] .= smallbench.ebic_sel[1:2]
 
     medicest = rank_selection(medmar.data, dimvals; iters=1000)
+    medbench = rrmar_ic(medmar.data, dimvals)
     medaic14[:, s] .= medicest.aic_sel[1:2]
     medbic14[:, s] .= medicest.bic_sel[1:2]
+    medebic14[:, s] .= medicest.ebic_sel[1:2]
+    medbench14[:, s] .= medbench.ebic_sel[1:2]
 
-    lock(R_LOCK) do
-        small_bench = R"""
-        d1 = $dimvals[1]
-        d2 = $dimvals[2]
-        small_data <- $small_bench_data
-        small_selected_rank <- r_rank_selection(small_data, d1, d2)
-        """
-        @rget small_selected_rank
-        smallbic14_bench[:, s] .= small_selected_rank[:selected_ranks]
-    end
-
-    lock(R_LOCK) do
-        med_bench = R"""
-        d1 = $dimvals[1]
-        d2 = $dimvals[2]
-        med_data <- $med_bench_data
-        med_selected_rank <- r_rank_selection(med_data, d1, d2)
-        """
-        @rget med_selected_rank
-        medbic14_bench[:, s] .= med_selected_rank[:selected_ranks]
-    end
 end
 
 save(datadir("threebyfour/14_results.jld2"), Dict(
     "smallaic" => smallaic14,
     "smallbic" => smallbic14,
+    "smallebic" => smallebic14,
+    "smallbench" => smallbench14,
     "medaic" => medaic14,
     "medbic" => medbic14,
-    "smallbic_bench" => smallbic14_bench,
-    "medbic_bench" => medbic14_bench,
+    "medebic" => medebic14,
+    "medbench" => medbench14,
 ))
 
 medaicstats = sim_stats(medaic14, ranks, sims)
 medbicstats = sim_stats(medbic14, ranks, sims)
+medebicstats = sim_stats(medebic14, ranks, sims)
+medbenchstats = sim_stats(medbench14, ranks, sims)
+
 smallaicstats = sim_stats(smallaic14, ranks, sims)
 smallbicstats = sim_stats(smallbic14, ranks, sims)
-smallbicstats_bench = sim_stats(smallbic14_bench, ranks, sims)
-medbicstats_bench = sim_stats(medbic14_bench, ranks, sims)
+smallebicstats = sim_stats(smallebic14, ranks, sims)
+smallbenchstats = sim_stats(smallbench14, ranks, sims)
 
-println("Average rank for small size (AIC): ", smallaicstats.avgval)
-println("Average rank for small size (BIC): ", smallbicstats.avgval)
-println("Average rank for small size (bench BIC): ", smallbicstats_bench.avgval)
-
-println("Std. Dev rank for small size (AIC): ", round.(smallaicstats.stdval, digits=4))
-println("Std. Dev rank for small size (BIC): ", round.(smallbicstats.stdval, digits=4))
-println("Std. Dev rank for small size (bench BIC): ", round.(smallbicstats_bench.stdval, digits=4))
+println("MAD for small size (AIC): ", smallaicstats.mad)
+println("MAD for small size (BIC): ", smallbicstats.mad)
+println("MAD for small size (EBIC): ", smallebicstats.mad)
+println("MAD for small size (Bench EBIC): ", smallbenchstats.mad)
 
 println("Freq. Correct for small size (AIC): ", smallaicstats.freqcorrect)
 println("Freq. Correct for small size (BIC): ", smallbicstats.freqcorrect)
-println("Freq. Correct for small size (bench BIC): ", smallbicstats_bench.freqcorrect)
+println("Freq. Correct for small size (EBIC): ", smallebicstats.freqcorrect)
+println("Freq. Correct for small size (Bench EBIC): ", smallbenchstats.freqcorrect)
 
-println("Average rank for medium size (AIC): ", medaicstats.avgval)
-println("Average rank for medium size (BIC): ", medbicstats.avgval)
-println("Average rank for medium size (bench BIC): ", medbicstats_bench.avgval)
-
-println("Std. Dev rank for medium size (AIC): ", round.(medaicstats.stdval, digits=4))
-println("Std. Dev rank for medium size (BIC): ", round.(medbicstats.stdval, digits=4))
-println("Std. Dev rank for medium size (bench BIC): ", round.(medbicstats_bench.stdval, digits=4))
+println("MAD for medium size (AIC): ", medaicstats.mad)
+println("MAD for medium size (BIC): ", medbicstats.mad)
+println("MAD for medium size (EBIC): ", medebicstats.mad)
+println("MAD for medium size (Bench EBIC): ", medbenchstats.mad)
 
 println("Freq. Correct for medium size (AIC): ", medaicstats.freqcorrect)
 println("Freq. Correct for medium size (BIC): ", medbicstats.freqcorrect)
-println("Freq. Correct for medium size (bench BIC): ", medbicstats_bench.freqcorrect)
+println("Freq. Correct for medium size (EBIC): ", medebicstats.freqcorrect)
+println("Freq. Correct for medium size (Bench BIC): ", medbenchstats.freqcorrect)

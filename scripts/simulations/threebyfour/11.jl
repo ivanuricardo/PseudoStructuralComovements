@@ -2,7 +2,7 @@ using DrWatson
 @quickactivate :PseudoStructuralComovements
 Random.seed!(20250723)
 
-sims = 100
+sims = 1000
 dimvals = [3, 4]
 ranks = [1, 1]
 snr = 0.7
