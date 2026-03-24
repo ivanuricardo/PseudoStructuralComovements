@@ -148,10 +148,10 @@ function check_rank(ictable, compared_rank)
     aic_sel = selected_ic[(end-2):end, aicvec]
     bicvec = argmin(selected_ic[2, :])
     bic_sel = Int.(selected_ic[(end-2):end, bicvec])
-    hqcvec = argmin(selected_ic[3, :])
-    hqc_sel = Int.(selected_ic[(end-2):end, hqcvec])
+    ebicvec = argmin(selected_ic[3, :])
+    ebic_sel = Int.(selected_ic[(end-2):end, ebicvec])
 
-    return (; aic_sel, bic_sel, hqc_sel, selected_ic)
+    return (; aic_sel, bic_sel, ebic_sel, selected_ic)
 end
 
 function nearest_kron(A, SizeB, SizeC)
