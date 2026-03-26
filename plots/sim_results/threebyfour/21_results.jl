@@ -2,45 +2,46 @@ using DrWatson
 @quickactivate :PseudoStructuralComovements
 
 ranks = [2, 1]
-sims = 100
+sims = 1000
 sim_results = load(datadir("threebyfour/21_results.jld2"))
 smallaic = sim_results["smallaic"]
 smallbic = sim_results["smallbic"]
-smallbic_bench = sim_results["smallbic_bench"]
-medbic_bench = sim_results["medbic_bench"]
+smallebic = sim_results["smallebic"]
+smallbench = sim_results["smallbench"]
 medaic = sim_results["medaic"]
 medbic = sim_results["medbic"]
+medebic = sim_results["medebic"]
+medbench = sim_results["medbench"]
 
 medaicstats = sim_stats(medaic, ranks, sims)
 medbicstats = sim_stats(medbic, ranks, sims)
-medbicstats_bench = sim_stats(medbic_bench, ranks, sims)
+medebicstats = sim_stats(medebic, ranks, sims)
+medbenchstats = sim_stats(medbench, ranks, sims)
+
 smallaicstats = sim_stats(smallaic, ranks, sims)
 smallbicstats = sim_stats(smallbic, ranks, sims)
-smallbicstats_bench = sim_stats(smallbic_bench, ranks, sims)
+smallebicstats = sim_stats(smallebic, ranks, sims)
+smallbenchstats = sim_stats(smallbench, ranks, sims)
 
-println("Average rank for small size (AIC): ", smallaicstats.mad)
-println("Average rank for small size (BIC): ", smallbicstats.mad)
-println("Average rank for small size (bench BIC): ", smallbicstats_bench.mad)
-
-println("Std. Dev rank for small size (AIC): ", round.(smallaicstats.stdval, digits=4))
-println("Std. Dev rank for small size (BIC): ", round.(smallbicstats.stdval, digits=4))
-println("Std. Dev rank for small size (bench BIC): ", round.(smallbicstats_bench.stdval, digits=4))
+println("MAD for small size (AIC): ", smallaicstats.mad)
+println("MAD for small size (BIC): ", smallbicstats.mad)
+println("MAD for small size (EBIC): ", smallebicstats.mad)
+println("MAD for small size (Bench EBIC): ", smallbenchstats.mad)
 
 println("Freq. Correct for small size (AIC): ", smallaicstats.freqcorrect)
 println("Freq. Correct for small size (BIC): ", smallbicstats.freqcorrect)
-println("Freq. Correct for small size (bench BIC): ", smallbicstats_bench.freqcorrect)
+println("Freq. Correct for small size (EBIC): ", smallebicstats.freqcorrect)
+println("Freq. Correct for small size (Bench EBIC): ", smallbenchstats.freqcorrect)
 
-println("Average rank for medium size (AIC): ", medaicstats.mad)
-println("Average rank for medium size (BIC): ", medbicstats.mad)
-println("Average rank for medium size (bench BIC): ", medbicstats_bench.mad)
-
-println("Std. Dev rank for medium size (AIC): ", round.(medaicstats.stdval, digits=4))
-println("Std. Dev rank for medium size (BIC): ", round.(medbicstats.stdval, digits=4))
-println("Std. Dev rank for medium size (bench BIC): ", round.(medbicstats_bench.stdval, digits=4))
+println("MAD for medium size (AIC): ", medaicstats.mad)
+println("MAD for medium size (BIC): ", medbicstats.mad)
+println("MAD for medium size (EBIC): ", medebicstats.mad)
+println("MAD for medium size (Bench EBIC): ", medbenchstats.mad)
 
 println("Freq. Correct for medium size (AIC): ", medaicstats.freqcorrect)
 println("Freq. Correct for medium size (BIC): ", medbicstats.freqcorrect)
-println("Freq. Correct for medium size (bench BIC): ", medbicstats_bench.freqcorrect)
+println("Freq. Correct for medium size (EBIC): ", medebicstats.freqcorrect)
+println("Freq. Correct for medium size (Bench EBIC): ", medbenchstats.freqcorrect)
 
 println("________________________________________________")
 
@@ -49,79 +50,81 @@ println("BONUS: Statistics if we 'accidentally' choose the incorrect rank")
 under_sim_results = load(datadir("threebyfour/under_21_results.jld2"))
 under_smallaic = under_sim_results["under_smallaic"]
 under_smallbic = under_sim_results["under_smallbic"]
-under_smallbic_bench = under_sim_results["under_smallbic_bench"]
-under_medbic_bench = under_sim_results["under_medbic_bench"]
+under_smallebic = under_sim_results["under_smallebic"]
+under_smallbench = under_sim_results["under_smallbench"]
 under_medaic = under_sim_results["under_medaic"]
 under_medbic = under_sim_results["under_medbic"]
+under_medebic = under_sim_results["under_medebic"]
+under_medbench = under_sim_results["under_medbench"]
 
 under_medaicstats = sim_stats(under_medaic, ranks, sims)
 under_medbicstats = sim_stats(under_medbic, ranks, sims)
-under_medbicstats_bench = sim_stats(under_medbic_bench, ranks, sims)
+under_medebicstats = sim_stats(under_medebic, ranks, sims)
+under_medbenchstats = sim_stats(under_medbench, ranks, sims)
+
 under_smallaicstats = sim_stats(under_smallaic, ranks, sims)
 under_smallbicstats = sim_stats(under_smallbic, ranks, sims)
-under_smallbicstats_bench = sim_stats(under_smallbic_bench, ranks, sims)
+under_smallebicstats = sim_stats(under_smallebic, ranks, sims)
+under_smallbenchstats = sim_stats(under_smallbench, ranks, sims)
 
-println("Average rank for small size (AIC): ", under_smallaicstats.mad)
-println("Average rank for small size (BIC): ", under_smallbicstats.mad)
-println("Average rank for small size (bench BIC): ", under_smallbicstats_bench.mad)
-
-println("Std. Dev rank for small size (AIC): ", round.(under_smallaicstats.stdval, digits=4))
-println("Std. Dev rank for small size (BIC): ", round.(under_smallbicstats.stdval, digits=4))
-println("Std. Dev rank for small size (bench BIC): ", round.(under_smallbicstats_bench.stdval, digits=4))
+println("MAD for small size (AIC): ", under_smallaicstats.mad)
+println("MAD for small size (BIC): ", under_smallbicstats.mad)
+println("MAD for small size (EBIC): ", under_smallebicstats.mad)
+println("MAD for small size (Bench EBIC): ", under_smallbenchstats.mad)
 
 println("Freq. Correct for small size (AIC): ", under_smallaicstats.freqcorrect)
 println("Freq. Correct for small size (BIC): ", under_smallbicstats.freqcorrect)
-println("Freq. Correct for small size (bench BIC): ", under_smallbicstats_bench.freqcorrect)
+println("Freq. Correct for small size (EBIC): ", under_smallebicstats.freqcorrect)
+println("Freq. Correct for small size (Bench EBIC): ", under_smallbenchstats.freqcorrect)
 
-println("Average rank for medium size (AIC): ", under_medaicstats.mad)
-println("Average rank for medium size (BIC): ", under_medbicstats.mad)
-println("Average rank for medium size (bench BIC): ", under_medbicstats_bench.mad)
-
-println("Std. Dev rank for medium size (AIC): ", round.(under_medaicstats.stdval, digits=4))
-println("Std. Dev rank for medium size (BIC): ", round.(under_medbicstats.stdval, digits=4))
-println("Std. Dev rank for medium size (bench BIC): ", round.(under_medbicstats_bench.stdval, digits=4))
+println("MAD for medium size (AIC): ", under_medaicstats.mad)
+println("MAD for medium size (BIC): ", under_medbicstats.mad)
+println("MAD for medium size (EBIC): ", under_medebicstats.mad)
+println("MAD for medium size (Bench EBIC): ", under_medbenchstats.mad)
 
 println("Freq. Correct for medium size (AIC): ", under_medaicstats.freqcorrect)
 println("Freq. Correct for medium size (BIC): ", under_medbicstats.freqcorrect)
-println("Freq. Correct for medium size (bench BIC): ", under_medbicstats_bench.freqcorrect)
+println("Freq. Correct for medium size (EBIC): ", under_medebicstats.freqcorrect)
+println("Freq. Correct for medium size (Bench EBIC): ", under_medbenchstats.freqcorrect)
 
 println("________________________________________________")
 
 over_sim_results = load(datadir("threebyfour/over_21_results.jld2"))
 over_smallaic = over_sim_results["over_smallaic"]
 over_smallbic = over_sim_results["over_smallbic"]
-over_smallbic_bench = over_sim_results["over_smallbic_bench"]
-over_medbic_bench = over_sim_results["over_medbic_bench"]
+over_smallebic = over_sim_results["over_smallebic"]
+over_smallbench = over_sim_results["over_smallbench"]
 over_medaic = over_sim_results["over_medaic"]
 over_medbic = over_sim_results["over_medbic"]
+over_medebic = over_sim_results["over_medebic"]
+over_medbench = over_sim_results["over_medbench"]
 
 over_medaicstats = sim_stats(over_medaic, ranks, sims)
 over_medbicstats = sim_stats(over_medbic, ranks, sims)
-over_medbicstats_bench = sim_stats(over_medbic_bench, ranks, sims)
+over_medebicstats = sim_stats(over_medebic, ranks, sims)
+over_medbenchstats = sim_stats(over_medbench, ranks, sims)
+
 over_smallaicstats = sim_stats(over_smallaic, ranks, sims)
 over_smallbicstats = sim_stats(over_smallbic, ranks, sims)
-over_smallbicstats_bench = sim_stats(over_smallbic_bench, ranks, sims)
+over_smallebicstats = sim_stats(over_smallebic, ranks, sims)
+over_smallbenchstats = sim_stats(over_smallbench, ranks, sims)
 
-println("Average rank for small size (AIC): ", over_smallaicstats.mad)
-println("Average rank for small size (BIC): ", over_smallbicstats.mad)
-println("Average rank for small size (bench BIC): ", over_smallbicstats_bench.mad)
-
-println("Std. Dev rank for small size (AIC): ", round.(over_smallaicstats.stdval, digits=4))
-println("Std. Dev rank for small size (BIC): ", round.(over_smallbicstats.stdval, digits=4))
-println("Std. Dev rank for small size (bench BIC): ", round.(over_smallbicstats_bench.stdval, digits=4))
+println("MAD for small size (AIC): ", over_smallaicstats.mad)
+println("MAD for small size (BIC): ", over_smallbicstats.mad)
+println("MAD for small size (EBIC): ", over_smallebicstats.mad)
+println("MAD for small size (Bench EBIC): ", over_smallbenchstats.mad)
 
 println("Freq. Correct for small size (AIC): ", over_smallaicstats.freqcorrect)
 println("Freq. Correct for small size (BIC): ", over_smallbicstats.freqcorrect)
-println("Freq. Correct for small size (bench BIC): ", over_smallbicstats_bench.freqcorrect)
+println("Freq. Correct for small size (EBIC): ", over_smallebicstats.freqcorrect)
+println("Freq. Correct for small size (Bench EBIC): ", over_smallbenchstats.freqcorrect)
 
-println("Average rank for medium size (AIC): ", over_medaicstats.mad)
-println("Average rank for medium size (BIC): ", over_medbicstats.mad)
-println("Average rank for medium size (bench BIC): ", over_medbicstats_bench.mad)
-
-println("Std. Dev rank for medium size (AIC): ", round.(over_medaicstats.stdval, digits=4))
-println("Std. Dev rank for medium size (BIC): ", round.(over_medbicstats.stdval, digits=4))
-println("Std. Dev rank for medium size (bench BIC): ", round.(over_medbicstats_bench.stdval, digits=4))
+println("MAD for medium size (AIC): ", over_medaicstats.mad)
+println("MAD for medium size (BIC): ", over_medbicstats.mad)
+println("MAD for medium size (EBIC): ", over_medebicstats.mad)
+println("MAD for medium size (Bench EBIC): ", over_medbenchstats.mad)
 
 println("Freq. Correct for medium size (AIC): ", over_medaicstats.freqcorrect)
 println("Freq. Correct for medium size (BIC): ", over_medbicstats.freqcorrect)
-println("Freq. Correct for medium size (bench BIC): ", over_medbicstats_bench.freqcorrect)
+println("Freq. Correct for medium size (EBIC): ", over_medebicstats.freqcorrect)
+println("Freq. Correct for medium size (Bench EBIC): ", over_medbenchstats.freqcorrect)

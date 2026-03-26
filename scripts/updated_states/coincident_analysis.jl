@@ -31,10 +31,19 @@ catted_data = cat(employment', unemployment', hours', wages'; dims = 3)
 tendata = permutedims(catted_data, (1,3,2))
 # Corresponds to the perm WI, ND, OH, MN, MI, IA, SD, IL, IN
 # perm_states = [9, 6, 7, 5, 4, 1, 8, 2, 3]
-# Corresponds to the perm ND, IN, MI, MN, OH, SD, WI, IL, IA
-perm_states = [6, 3, 4, 5, 7, 8, 9, 2, 1]
+# Corresponds to the perm ND, IN, MI, MN, IL, SD, WI, OH, IA
+perm_states = [6, 3, 4, 5, 2, 8, 9, 7, 1]
 rearranged_tendata = tendata[perm_states, :, :]
+n1, n2, obs = size(rearranged_tendata)
+dimvals = [n1, n2]
 matdata = vectorize(rearranged_tendata)
+
+icest = rank_selection(matdata, dimvals; iters=1000, pmax=1)
+icest = rrmar_ic(matdata, dimvals)
+# aic selects (8,4) with one lag
+# bic selects (5,4) with one lag
+# ebic selects (2,1) with one lag
+# this is 100 total parameters to estimate
 
 n1, n2, obs = size(tendata)
 dimvals = [n1, n2]
