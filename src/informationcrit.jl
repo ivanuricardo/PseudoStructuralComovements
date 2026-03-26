@@ -11,28 +11,25 @@ end
 
 aic_pen(numpars::Int) = 2 * numpars
 aic(ll::Real, numpars::Int) = -2 * ll + aic_pen(numpars)
+
 bic_pen(numpars::Int, obs::Int) = numpars * log(obs)
 bic(ll::Real, numpars::Int, obs::Int) = -2 * ll + bic_pen(numpars, obs)
 
-# EBIC penalty and criterion
-# gamma controls stringency: 0 = standard BIC, 0.5 = recommended, 1 = most conservative
-# total_candidates is the size of the model space being searched over (e.g. N1 * N2 for rank selection)
-ebic_pen(numpars::Int, obs::Int, total_candidates::Int; gamma::Real=0.5) = 
-    numpars * log(obs) + 2 * gamma * log(total_candidates)
+ebic_pen(numpars::Int, obs::Int, N1::Int, N2::Int; γ::Real=0.5) = 
+    numpars * (log(obs) + 2 * γ * log(N1 * N2))
+ebic(ll::Real, numpars::Int, obs::Int, N1::Int, N2::Int; γ::Real=0.5) = 
+    -2 * ll + ebic_pen(numpars, obs, N1, N2; γ=γ)
 
-ebic(ll::Real, numpars::Int, obs::Int, total_candidates::Int; gamma::Real=0.5) = 
-    -2 * ll + ebic_pen(numpars, obs, total_candidates, gamma)
-
-# function ebic_pen(dimvals, ranks, obs)
-#     n1, n2 = dimvals
-#     r1, r2 = ranks
-#     firstdim = log(obs * n2) * r1 * (2 * n1 - r1)
-#     seconddim = log(obs * n1) * r2 * (2 * n2 - r2)
-#     return firstdim + seconddim
-# end
-# function ebic(ll::Real, dimvals::AbstractVector, ranks::AbstractVector, obs::Int)
-#     return -2 * ll + ebic_pen(dimvals, ranks, obs)
-# end
+function ebic_pen_xiao(dimvals, ranks, obs)
+    n1, n2 = dimvals
+    r1, r2 = ranks
+    firstdim = log(obs * n2) * r1 * (2 * n1 - r1)
+    seconddim = log(obs * n1) * r2 * (2 * n2 - r2)
+    return firstdim + seconddim
+end
+function ebic_xiao(ll::Real, dimvals::AbstractVector, ranks::AbstractVector, obs::Int)
+    return -2 * ll + ebic_pen_xiao(dimvals, ranks, obs)
+end
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
 
 function rank_selection(data, dimvals; iters=1000, pmax=1, num_starts=100, num_selected=10)
@@ -40,9 +37,10 @@ function rank_selection(data, dimvals; iters=1000, pmax=1, num_starts=100, num_s
     obs = size(data, 2)
     ictable = fill(NaN, 6, prod(dimvals) * pmax)
     rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2], 1:pmax))
+    N1, N2 = dimvals
 
-    # for i = 1:(prod(dimvals) * pmax)
-    @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
+    for i = 1:(prod(dimvals) * pmax)
+    # @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
         selected_rank_lags = collect(rank_grid[i])
         selected_rank = selected_rank_lags[1:2]
         selected_lag = selected_rank_lags[3]
@@ -52,7 +50,7 @@ function rank_selection(data, dimvals; iters=1000, pmax=1, num_starts=100, num_s
         ll = -reg.res.minimum
         ictable[1, i] = aic(ll, num_parameters)
         ictable[2, i] = bic(ll, num_parameters, obs)
-        ictable[3, i] = ebic(ll, num_parameters, obs, prod(dimvals))
+        ictable[3, i] = ebic(ll, num_parameters, obs, N1, N2)
         ictable[4, i] = selected_rank[1]
         ictable[5, i] = selected_rank[2]
         ictable[6, i] = selected_lag
@@ -84,7 +82,7 @@ function rrmar_ic(data, dimvals; pmax=1)
         ll = -reg.ll
         ictable[1, i] = aic(ll, num_parameters)
         ictable[2, i] = bic(ll, num_parameters, obs)
-        ictable[3, i] = ebic(ll, dimvals, selected_rank, obs)
+        ictable[3, i] = ebic_xiao(ll, dimvals, selected_rank, obs)
         ictable[4, i] = selected_rank[1]
         ictable[5, i] = selected_rank[2]
         ictable[6, i] = selected_lag
