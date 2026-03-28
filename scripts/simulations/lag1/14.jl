@@ -7,13 +7,13 @@ dimvals = [3, 4]
 ranks = [1, 4]
 snr = 0.7
 
-smallaic14 = fill(NaN, 2, sims)
-smallbic14 = fill(NaN, 2, sims)
-smallebic14 = fill(NaN, 2, sims)
+smallaic14 = fill(NaN, 3, sims)
+smallbic14 = fill(NaN, 3, sims)
+smallebic14 = fill(NaN, 3, sims)
 
-medaic14 = fill(NaN, 2, sims)
-medbic14 = fill(NaN, 2, sims)
-medebic14 = fill(NaN, 2, sims)
+medaic14 = fill(NaN, 3, sims)
+medbic14 = fill(NaN, 3, sims)
+medebic14 = fill(NaN, 3, sims)
 
 burnin = 100
 smallobs = 100
@@ -25,15 +25,15 @@ A = generate_rrmar_coef(dimvals, ranks)
     medmar = simulate_rrmar_data(dimvals, ranks, medobs + burnin; A, snr, burnin, matrix_err=true)
     smallmar = simulate_rrmar_data(dimvals, ranks, smallobs + burnin; A, snr, burnin, matrix_err=true)
 
-    smallicest = rank_selection(smallmar.data, dimvals; iters=1000, pmax = 2)
-    smallaic14[:, s] .= smallicest.aic_sel[1:2]
-    smallbic14[:, s] .= smallicest.bic_sel[1:2]
-    smallebic14[:, s] .= smallicest.ebic_sel[1:2]
+    smallicest = rank_selection(smallmar.data, dimvals; iters=1000, pmax=2, num_starts=10, num_selected=4)
+    smallaic14[:, s] .= smallicest.aic_sel[1:3]
+    smallbic14[:, s] .= smallicest.bic_sel[1:3]
+    smallebic14[:, s] .= smallicest.ebic_sel[1:3]
 
-    medicest = rank_selection(medmar.data, dimvals; iters=1000, pmax = 2)
-    medaic14[:, s] .= medicest.aic_sel[1:2]
-    medbic14[:, s] .= medicest.bic_sel[1:2]
-    medebic14[:, s] .= medicest.ebic_sel[1:2]
+    medicest = rank_selection(medmar.data, dimvals; iters=1000, pmax=2, num_starts=10, num_selected=4)
+    medaic14[:, s] .= medicest.aic_sel[1:3]
+    medbic14[:, s] .= medicest.bic_sel[1:3]
+    medebic14[:, s] .= medicest.ebic_sel[1:3]
 
 end
 
