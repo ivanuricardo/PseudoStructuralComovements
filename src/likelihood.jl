@@ -91,16 +91,16 @@ function rand_init(dimvals, ranks; p=1)
 
 end
 
-function stack_with_random(A::AbstractMatrix{T}, p::Integer) where T<:Real
+function stack_with_zeros(A::AbstractMatrix{T}, p::Integer) where T<:Real
     N, r = size(A)
     mats = Vector{Matrix{T}}(undef, p+1)
     mats[1] = A
     for i in 1:p
-        B = randn(T, N, r)
-        B[1,1] = A[1,1]       # enforce the (1,1)–entry
+        B = zeros(T, N, r)
+        B[1,1] = A[1,1]
         mats[i+1] = B
     end
-    return vcat(mats...)      # stack them all vertically
+    return vcat(mats...)
 end
 
 function init_alg(data, dimvals, ranks; p=1)
@@ -158,8 +158,8 @@ function init_alg(data, dimvals, ranks; p=1)
     ll2_rot = ll2 * ss
 
     if p != 1
-        u3 = stack_with_random(u3, p-1)
-        u4 = stack_with_random(u4, p-1)
+        u3 = stack_with_zeros(u3, p-1)
+        u4 = stack_with_zeros(u4, p-1)
     end
 
     return pack_params(delta_star, gamma_star, u3, u4, ll1_rot, ll2_rot; p)
