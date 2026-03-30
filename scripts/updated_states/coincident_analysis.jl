@@ -113,15 +113,20 @@ Plots.plot(demean_standardize(coincident[:, 3]), label = "Crone and Clayton-Matt
 Plots.plot!(demean_standardize(permed_cis[3, :]), label = "Pseudo-Structural", title = "Indiana")
 cor(coincident[:, 3], permed_cis[3, :])
 
+# Michigan
+Plots.plot(demean_standardize(coincident[:, 4]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
+cor(coincident[:, 4], permed_cis[4, :])
+
 # Minnesota
 Plots.plot(demean_standardize(coincident[:, 5]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
-cor(coincident[:, 5], permed_cis[4, :])
+Plots.plot!(demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "Minnesota")
+cor(coincident[:, 5], permed_cis[5, :])
 
 # North Dakota
 Plots.plot(demean_standardize(coincident[:, 6]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "North Dakota")
-cor(coincident[:, 6], permed_cis[5, :])
+Plots.plot!(demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "North Dakota")
+cor(coincident[:, 6], permed_cis[6, :])
 # Plots.plot!(demean_standardize(employment[:, 5]), label = "Employment")
 # ND experienced an oil boom between 2006, peaked in 2012, and crashed in 2014.
 # can plot it as
@@ -129,19 +134,24 @@ cor(coincident[:, 6], permed_cis[5, :])
 
 # Ohio
 Plots.plot(demean_standardize(coincident[:, 7]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "Ohio")
-cor(coincident[:, 7], permed_cis[6, :])
+Plots.plot!(demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "Ohio")
+cor(coincident[:, 7], permed_cis[7, :])
 
 # South Dakota
 Plots.plot(demean_standardize(coincident[:, 8]), label = "Crone and Clayton-Matthews")
-Plots.plot!(demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "South Dakota")
-cor(coincident[:, 8], permed_cis[7, :])
+Plots.plot!(demean_standardize(permed_cis[8, :]), label = "Pseudo-Structural", title = "South Dakota")
+cor(coincident[:, 8], permed_cis[8, :])
+
+# Wisconsin
+Plots.plot(demean_standardize(coincident[:, 9]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[9, :]), label = "Pseudo-Structural", title = "Wisconsin")
+cor(coincident[:, 9], permed_cis[9, :])
 
 # Delta method using the asymptotic variance for delta and gamma
-dg_var = inv(res.hess_est)[1:13, 1:13]
+dg_var = inv(res.hess_est)[1:17, 1:17]
 
 # I need delta star and gamma star
-delta_star = res.delta_est[6:end, :]
+delta_star = res.delta_est[8:end, :]
 gamma_star = res.gamma_est[end, :]'
 
 # I want the asymptotic variance of kron(gamma_star, delta_star)'
@@ -149,8 +159,8 @@ m, n = size(reshape(gamma_star', :, 1))
 p, q = size(delta_star')
 commutation_mat = comm_mat(q, m)
 large_comm = kron(kron(I(n), commutation_mat), I(p))
-partial_gamma = kron(I(3), vec(delta_star'))
-partial_delta = kron(vec(gamma_star'), I(10))
+partial_gamma = kron(I(m * n), vec(delta_star'))
+partial_delta = kron(vec(gamma_star'), I(p * q))
 J = large_comm * hcat(partial_delta, partial_gamma)
 
 # Delta result
@@ -163,8 +173,9 @@ tstats = theta ./ delta_method_stderr
 pvals = 2 .* (1 .- cdf.(Normal(), abs.(tstats)))
 
 sig_5 = abs.(tstats) .> 1.372
-hcat(theta, delta_method_stderr, tstats, sig_5)
+hcat(theta, delta_method_stderr, tstats, pvals, sig_5)
 # It is really only the second variable in the list that is significant
+pvals_mat = reshape(pvals, p * m, n * q)
 
 ################################################################################
 
