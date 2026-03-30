@@ -260,7 +260,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
 
     for i in 1:num_starts
-        both_init = copy(some_init) .+ (0.01 * i) .* randn(length(some_init))
+        both_init = copy(some_init) .+ (0.001 + 0.05 * rand()) .* randn(length(some_init))
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
 
