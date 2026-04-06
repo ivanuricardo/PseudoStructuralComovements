@@ -265,7 +265,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
 
     if p == 1
-        init_two_lags = comovement_reg(data, dimvals, ranks; p = 2)
+        init_two_lags = comovement_reg(data, dimvals, ranks; p = 2, num_starts=20, num_selected=3)
         delta_star = init_two_lags.delta_est[(dimvals[1]-ranks[1]+1):end, :]
         gamma_star = init_two_lags.gamma_est[(dimvals[2]-ranks[2]+1):end, :]
         u3 = init_two_lags.u3_est[1:dimvals[1], :]
