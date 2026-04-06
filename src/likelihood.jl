@@ -68,8 +68,15 @@ function unpack_params(theta, dimvals, ranks; p=1)
 end
 
 function pack_params(delta_star, gamma_star, u3, u4, ll1, ll2; p=1)
-    n1, n2 = size(u3)
-    vec_u3 = filter(x -> !isapprox(x, 1.0; atol=1e-12), vec(u3))
+    N1 = size(u3, 1) ÷ p
+    r1 = size(u3, 2)
+    u3_vec = vec(u3)
+    
+    # Remove first element of EACH lag block (position-based, not value-based)
+    block_size = N1 * r1
+    norm_positions = [1 + (k-1) * block_size for k in 1:p]  # [1, N1*r1+1, 2*N1*r1+1, ...]
+    vec_u3 = u3_vec[setdiff(1:length(u3_vec), norm_positions)]
+
     vec_ll1 = vech(ll1)
     deleteat!(vec_ll1, 1)
     vec_ll2 = vech(ll2)
@@ -96,9 +103,7 @@ function stack_with_zeros(A::AbstractMatrix{T}, p::Integer) where T<:Real
     mats = Vector{Matrix{T}}(undef, p+1)
     mats[1] = A
     for i in 1:p
-        B = zeros(T, N, r)
-        B[1,1] = A[1,1]
-        mats[i+1] = B
+        mats[i+1] = zeros(T, N, r)  # pure zeros, normalization handled by pack/unpack
     end
     return vcat(mats...)
 end
@@ -259,8 +264,25 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
     potential_starts = fill(NaN, init_length + 1, num_starts)
     obj = tet -> loglike(tet, resp, pred, dimvals, ranks; p)
 
+    if p == 1
+        init_two_lags = comovement_reg(data, dimvals, ranks; p = 2)
+        delta_star = init_two_lags.delta_est[(dimvals[1]-ranks[1]+1):end, :]
+        gamma_star = init_two_lags.gamma_est[(dimvals[2]-ranks[2]+1):end, :]
+        u3 = init_two_lags.u3_est[1:dimvals[1], :]
+        u4 = init_two_lags.u4_est[1:dimvals[2], :]
+        two_init= pack_params(delta_star, gamma_star, u3, u4, I(dimvals[1]), I(dimvals[2]))
+    end
+
     for i in 1:num_starts
-        both_init = copy(some_init) .+ (0.001 + 0.05 * rand()) .* randn(length(some_init))
+        if p == 1
+            if i < num_starts ÷ 2
+                both_init = copy(some_init) .+ (0.001 + 0.05 * rand()) .* randn(length(some_init))
+            else
+                both_init = copy(two_init) .+ (0.001 + 0.05 * rand()) .* randn(length(some_init))
+            end
+        else
+            both_init = copy(some_init) .+ (0.001 + 0.05 * rand()) .* randn(length(some_init))
+        end
         potential_starts[1:(end-1), i] = both_init
         td = TwiceDifferentiable(obj, both_init, autodiff=:forward)
 
