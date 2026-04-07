@@ -270,7 +270,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
         gamma_star = init_two_lags.gamma_est[(dimvals[2]-ranks[2]+1):end, :]
         u3 = init_two_lags.u3_est[1:dimvals[1], :]
         u4 = init_two_lags.u4_est[1:dimvals[2], :]
-        two_init= pack_params(delta_star, gamma_star, u3, u4, I(dimvals[1]), I(dimvals[2]))
+        two_init = pack_params(delta_star, gamma_star, u3, u4, I(dimvals[1]), I(dimvals[2]))
     end
 
     for i in 1:num_starts
@@ -278,7 +278,7 @@ function comovement_init(data, resp, pred, dimvals, ranks; iters=5, tol=1e-10, n
             if i < num_starts ÷ 2
                 both_init = copy(some_init) .+ (0.001 + 0.05 * rand()) .* randn(length(some_init))
             else
-                both_init = copy(two_init) .+ (0.001 + 0.05 * rand()) .* randn(length(some_init))
+                both_init = copy(two_init) .+ (0.001 + 0.05 * rand()) .* randn(length(two_init))
             end
         else
             both_init = copy(some_init) .+ (0.001 + 0.05 * rand()) .* randn(length(some_init))
@@ -352,7 +352,7 @@ function main_algorithm(data, resp, pred, dimvals, ranks; iters=1000, tol=1e-10,
     return (; res, td)
 end
 
-function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=100, num_selected=10, p=1)
+function comovement_reg(data, dimvals, ranks; iters=1000, tol=1e-10, num_starts=20, num_selected=3, p=1)
 
     nrows = size(data, 1)
     expected = prod(dimvals) * p
