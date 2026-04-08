@@ -39,21 +39,19 @@ dimvals = [n1, n2]
 matdata = vectorize(rearranged_tendata)
 
 icest = rank_selection(matdata, dimvals; iters=1000, pmax=1)
-save(datadir("updated_states/rank_results.jld2"), Dict("icest" => icest))
-# println("icest.ictable")
-# icest2 = rrmar_ic(matdata, dimvals)
+icest2 = rrmar_ic(matdata, dimvals)
 # aic selects (8,4) with one lag
 # bic selects (5,4) with one lag
 # ebic selects (2,1) with one lag
 # this is 100 total parameters to estimate
 
-# n1, n2, obs = size(tendata)
-# dimvals = [n1, n2]
-# res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
+n1, n2, obs = size(tendata)
+dimvals = [n1, n2]
+res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
 # save(datadir("updated_states/coincident_results.jld2"), Dict("res" => res))
 # load the results
-# loaded_results = load(datadir("updated_states/coincident_results.jld2"))
-# res = loaded_results["res"]
+loaded_results = load(datadir("updated_states/coincident_results.jld2"))
+res = loaded_results["res"]
 
 # julia> res.delta_est
 # 9×7 Matrix{Float64}:
@@ -89,105 +87,105 @@ save(datadir("updated_states/rank_results.jld2"), Dict("icest" => icest))
 # coincident order is 
 # IA, IL, IN, MI, MN, ND, OH, SD, WI
 # we omit MI and WI
-# factors = kron(res.u4_est, res.u3_est)' * matdata
+factors = kron(res.u4_est, res.u3_est)' * matdata
 # factors = kron(res.u4_est, I(4))' * matdata
-# u1 = nullspace(res.delta_est') * inv(nullspace(res.delta_est')[8:end, :])
+u1 = nullspace(res.delta_est') * inv(nullspace(res.delta_est')[8:end, :])
 # u2 = nullspace(res.gamma_est') * inv(nullspace(res.gamma_est')[4, 1])
 # coincident_inds = kron(u2, u1) * factors
-# coincident_inds = u1 * factors
-# permed_cis = coincident_inds[invperm(perm_states), :]
+coincident_inds = u1 * factors
+permed_cis = coincident_inds[invperm(perm_states), :]
 # permed_cis = factors[invperm(perm_states), :]
 
-# save(datadir("updated_states/coincident_series.jld2"), Dict("cis" => permed_cis))
+save(datadir("updated_states/coincident_series.jld2"), Dict("cis" => permed_cis))
 
 # Iowa
-# Plots.plot(demean_standardize(coincident[:, 1]), label = "Crone and Clayton-Matthews", title = "Iowa")
-# Plots.plot!(demean_standardize(permed_cis[1, :]), label = "Pseudo-Structural")
-# cor(coincident[:, 1], permed_cis[1, :])
+Plots.plot(demean_standardize(coincident[:, 1]), label = "Crone and Clayton-Matthews", title = "Iowa")
+Plots.plot!(demean_standardize(permed_cis[1, :]), label = "Pseudo-Structural")
+cor(coincident[:, 1], permed_cis[1, :])
 
 # Illinois
-# Plots.plot(demean_standardize(coincident[:, 2]), label = "Crone and Clayton-Matthews", title = "Illinois")
-# Plots.plot!(demean_standardize(permed_cis[2, :]), label = "Pseudo-Structural")
-# cor(coincident[:, 2], permed_cis[2, :])
+Plots.plot(demean_standardize(coincident[:, 2]), label = "Crone and Clayton-Matthews", title = "Illinois")
+Plots.plot!(demean_standardize(permed_cis[2, :]), label = "Pseudo-Structural")
+cor(coincident[:, 2], permed_cis[2, :])
 
 # Indiana
-# Plots.plot(demean_standardize(coincident[:, 3]), label = "Crone and Clayton-Matthews")
-# Plots.plot!(demean_standardize(permed_cis[3, :]), label = "Pseudo-Structural", title = "Indiana")
-# cor(coincident[:, 3], permed_cis[3, :])
+Plots.plot(demean_standardize(coincident[:, 3]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[3, :]), label = "Pseudo-Structural", title = "Indiana")
+cor(coincident[:, 3], permed_cis[3, :])
 
 # Michigan
-# Plots.plot(demean_standardize(coincident[:, 4]), label = "Crone and Clayton-Matthews")
-# Plots.plot!(demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
-# cor(coincident[:, 4], permed_cis[4, :])
+Plots.plot(demean_standardize(coincident[:, 4]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[4, :]), label = "Pseudo-Structural", title = "Minnesota")
+cor(coincident[:, 4], permed_cis[4, :])
 
 # Minnesota
-# Plots.plot(demean_standardize(coincident[:, 5]), label = "Crone and Clayton-Matthews")
-# Plots.plot!(demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "Minnesota")
-# cor(coincident[:, 5], permed_cis[5, :])
+Plots.plot(demean_standardize(coincident[:, 5]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[5, :]), label = "Pseudo-Structural", title = "Minnesota")
+cor(coincident[:, 5], permed_cis[5, :])
 
 # North Dakota
-# Plots.plot(demean_standardize(coincident[:, 6]), label = "Crone and Clayton-Matthews")
-# Plots.plot!(demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "North Dakota")
-# cor(coincident[:, 6], permed_cis[6, :])
+Plots.plot(demean_standardize(coincident[:, 6]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[6, :]), label = "Pseudo-Structural", title = "North Dakota")
+cor(coincident[:, 6], permed_cis[6, :])
 # Plots.plot!(demean_standardize(employment[:, 5]), label = "Employment")
 # ND experienced an oil boom between 2006, peaked in 2012, and crashed in 2014.
 # can plot it as
 # Plots.plot(ut_employment[:, 5])
 
 # Ohio
-# Plots.plot(demean_standardize(coincident[:, 7]), label = "Crone and Clayton-Matthews")
-# Plots.plot!(demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "Ohio")
-# cor(coincident[:, 7], permed_cis[7, :])
+Plots.plot(demean_standardize(coincident[:, 7]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[7, :]), label = "Pseudo-Structural", title = "Ohio")
+cor(coincident[:, 7], permed_cis[7, :])
 
 # South Dakota
-# Plots.plot(demean_standardize(coincident[:, 8]), label = "Crone and Clayton-Matthews")
-# Plots.plot!(demean_standardize(permed_cis[8, :]), label = "Pseudo-Structural", title = "South Dakota")
-# cor(coincident[:, 8], permed_cis[8, :])
+Plots.plot(demean_standardize(coincident[:, 8]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[8, :]), label = "Pseudo-Structural", title = "South Dakota")
+cor(coincident[:, 8], permed_cis[8, :])
 
 # Wisconsin
-# Plots.plot(demean_standardize(coincident[:, 9]), label = "Crone and Clayton-Matthews")
-# Plots.plot!(demean_standardize(permed_cis[9, :]), label = "Pseudo-Structural", title = "Wisconsin")
-# cor(coincident[:, 9], permed_cis[9, :])
+Plots.plot(demean_standardize(coincident[:, 9]), label = "Crone and Clayton-Matthews")
+Plots.plot!(demean_standardize(permed_cis[9, :]), label = "Pseudo-Structural", title = "Wisconsin")
+cor(coincident[:, 9], permed_cis[9, :])
 
 # Delta method using the asymptotic variance for delta and gamma
-# dg_var = inv(res.hess_est)[1:17, 1:17]
+dg_var = inv(res.hess_est)[1:17, 1:17]
 
 # I need delta star and gamma star
-# delta_star = res.delta_est[8:end, :]
-# gamma_star = res.gamma_est[end, :]'
+delta_star = res.delta_est[8:end, :]
+gamma_star = res.gamma_est[end, :]'
 
 # I want the asymptotic variance of kron(gamma_star, delta_star)'
-# m, n = size(reshape(gamma_star', :, 1))
-# p, q = size(delta_star')
-# commutation_mat = comm_mat(q, m)
-# large_comm = kron(kron(I(n), commutation_mat), I(p))
-# partial_gamma = kron(I(m * n), vec(delta_star'))
-# partial_delta = kron(vec(gamma_star'), I(p * q))
-# J = large_comm * hcat(partial_delta, partial_gamma)
+m, n = size(reshape(gamma_star', :, 1))
+p, q = size(delta_star')
+commutation_mat = comm_mat(q, m)
+large_comm = kron(kron(I(n), commutation_mat), I(p))
+partial_gamma = kron(I(m * n), vec(delta_star'))
+partial_delta = kron(vec(gamma_star'), I(p * q))
+J = large_comm * hcat(partial_delta, partial_gamma)
 
 # Delta result
-# delta_method_variance = J * dg_var * J'
-# delta_method_stderr = sqrt.(diag(delta_method_variance))
+delta_method_variance = J * dg_var * J'
+delta_method_stderr = sqrt.(diag(delta_method_variance))
 
-# theta = vec(kron(gamma_star', delta_star'))
-# tstats = theta ./ delta_method_stderr
+theta = vec(kron(gamma_star', delta_star'))
+tstats = theta ./ delta_method_stderr
 
-# pvals = 2 .* (1 .- cdf.(Normal(), abs.(tstats)))
-#
-# sig_5 = abs.(tstats) .> 1.372
-# hcat(theta, delta_method_stderr, tstats, pvals, sig_5)
+pvals = 2 .* (1 .- cdf.(Normal(), abs.(tstats)))
+
+sig_5 = abs.(tstats) .> 1.372
+hcat(theta, delta_method_stderr, tstats, pvals, sig_5)
 # It is really only the second variable in the list that is significant
-# pvals_mat = reshape(pvals, p * m, n * q)
+pvals_mat = reshape(pvals, p * m, n * q)
 
 ################################################################################
 
 # Coincident and leading indicators
-# leading_fixed = leading[:, [2,3,6,7]]
-#
-# coincident_and_leading = vcat(factors, leading_fixed')
-# n1, _, obs = size(rearranged_tendata)
-# dimvals = [n1, 2]
-# icest = rank_selection(coincident_and_leading, dimvals; iters=1000, pmax=1)
+leading_fixed = leading[:, [2,3,6,7]]
+
+coincident_and_leading = vcat(factors, leading_fixed')
+n1, _, obs = size(rearranged_tendata)
+dimvals = [n1, 2]
+icest = rank_selection(coincident_and_leading, dimvals; iters=1000, pmax=1)
 
 # julia> icest.ictable'
 # 14×6 adjoint(::Matrix{Float64}) with eltype Float64:

@@ -67,6 +67,15 @@ export generate_rrmar_coef
 export simulate_rrmar_data
 export sim_stats
 
+include("rrvar.jl")
+export rrvar_loglik
+export fit_rrvar
+export gaussian_loglik
+export reduced_rank_regression
+export invsqrt_spd
+export lagmat
+export rrvar_num_params
+
 function __init__()
     r_path1 = joinpath(@__DIR__, "r_helpers.R")  # Path to R file
     r_path2 = joinpath(@__DIR__, "tenAR.R")  # Path to R file
