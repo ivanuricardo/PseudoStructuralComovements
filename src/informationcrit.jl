@@ -32,15 +32,15 @@ function ebic_xiao(ll::Real, dimvals::AbstractVector, ranks::AbstractVector, obs
 end
 hqc(ll::Real, numpars::Int, obs::Int) = -2 * ll + (numpars * 2 * log(log(obs)))
 
-function rank_selection(data, dimvals; iters=1000, pmax=1, num_starts=100, num_selected=10)
+function rank_selection(data, dimvals; iters=1000, pmax=1, num_starts=20, num_selected=5)
 
     obs = size(data, 2)
     ictable = fill(NaN, 6, prod(dimvals) * pmax)
     rank_grid = collect(Iterators.product(1:dimvals[1], 1:dimvals[2], 1:pmax))
     N1, N2 = dimvals
 
-    for i = 1:(prod(dimvals) * pmax)
-    # @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
+    # for i = 1:(prod(dimvals) * pmax)
+    @showprogress Threads.@threads for i = 1:(prod(dimvals) * pmax)
         selected_rank_lags = collect(rank_grid[i])
         selected_rank = selected_rank_lags[1:2]
         selected_lag = selected_rank_lags[3]

@@ -53,6 +53,8 @@ res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
 loaded_results = load(datadir("updated_states/coincident_results.jld2"))
 res = loaded_results["res"]
 
+fit = fit_rrvar(matdata', 1, 36)   # VAR(1), rank 2
+
 # julia> res.delta_est
 # 9×7 Matrix{Float64}:
 #   1.0        0.0        0.0        0.0         0.0        0.0         0.0

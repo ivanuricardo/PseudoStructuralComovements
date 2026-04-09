@@ -2,7 +2,7 @@ using DrWatson
 @quickactivate :PseudoStructuralComovements
 
 ranks = [1, 4]
-sims = 1000
+sims = 100
 sim_results = load(datadir("threebyfour/14_results.jld2"))
 smallaic = sim_results["smallaic"]
 smallbic = sim_results["smallbic"]

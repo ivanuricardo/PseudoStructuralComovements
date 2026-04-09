@@ -130,7 +130,7 @@ function fit_rrvar(Y::AbstractMatrix, p::Int, r::Int; intercept::Bool=true)
 
     aic = -2 * ll + 2 * n_params
     bic = -2 * ll + n_params * log(T_eff)
-    ebic = -2 * ll + n_params * log(T_eff) + log(n)
+    ebic = -2 * ll + n_params * (log(T_eff) + log(n))
 
     return RRVARFit(p, r, intercept, α, B, Σ, ll, aic, bic, ebic)
 
@@ -144,13 +144,3 @@ function rrvar_loglik(Y::AbstractMatrix, fit::RRVARFit)
     return gaussian_loglik(E, fit.Σ)
 end
 
-
-
-
-Y = randn(300, 3)          # T × n data matrix, rows = time
-fit = fit_rrvar(Y, 2, 1)   # VAR(2), rank 1
-
-fit.B
-fit.α
-fit.Σ
-fit.loglik
