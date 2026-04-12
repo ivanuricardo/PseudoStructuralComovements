@@ -38,7 +38,10 @@ n1, n2, obs = size(rearranged_tendata)
 dimvals = [n1, n2]
 matdata = vectorize(rearranged_tendata)
 
-icest = rank_selection(matdata, dimvals; iters=1000, pmax=1)
+
+tmp = rrmar(matdata, dimvals, [2,1])
+
+icest = rank_selection(matdata, dimvals; iters=1000, pmax=1, num_starts=50, num_selected=5)
 icest2 = rrmar_ic(matdata, dimvals)
 # aic selects (8,4) with one lag
 # bic selects (5,4) with one lag
@@ -47,7 +50,7 @@ icest2 = rrmar_ic(matdata, dimvals)
 
 n1, n2, obs = size(tendata)
 dimvals = [n1, n2]
-res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1)
+res = comovement_reg(matdata, dimvals, [2, 1]; iters=1000, p=1, num_starts=100, num_selected=10)
 # save(datadir("updated_states/coincident_results.jld2"), Dict("res" => res))
 # load the results
 loaded_results = load(datadir("updated_states/coincident_results.jld2"))
