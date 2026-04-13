@@ -45,7 +45,7 @@ A.sorted_eigs
 @showprogress Threads.@threads for s = 1:sims
     mar = simulate_rrmar_data(dimvals, ranks, obs + burnin; A, snr, burnin, matrix_err=true)
 
-    icest = rank_selection(mar.data, dimvals; num_starts=5, num_selected=3)
+    icest = rank_selection(mar.data, dimvals; num_starts=20, num_selected=3)
     # icest2 = rrmar_ic(mar.data, dimvals)
     aic_val[:, s] .= icest.aic_sel[1:2]
     bic_val[:, s] .= icest.bic_sel[1:2]

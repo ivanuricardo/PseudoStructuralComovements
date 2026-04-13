@@ -31,9 +31,9 @@ rrmar_ll = fill(NaN, 1, sims)
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_rank, obs; A=coef, burnin, matrix_err=true)
 
-    correct_reg = comovement_reg(data.data, dimvals, true_rank; iters=1000)
-    over_reg = comovement_reg(data.data, dimvals, over_rank; iters=1000)
-    under_reg = comovement_reg(data.data, dimvals, under_rank; iters=1000)
+    correct_reg = comovement_reg(data.data, dimvals, true_rank; iters=1000, num_starts=200, num_selected=10)
+    over_reg = comovement_reg(data.data, dimvals, over_rank; iters=1000, num_starts=200, num_selected=10)
+    under_reg = comovement_reg(data.data, dimvals, under_rank; iters=1000, num_starts=200, num_selected=10)
 
     rrmar_correct = rrmar(data.data, dimvals, true_rank)
     rrmar_over = rrmar(data.data, dimvals, over_rank)
@@ -65,24 +65,24 @@ save(datadir("coverage/34/delta_comparison_results100.jld2"), Dict(
     "comove_iters" => comove_iters,
 ))
 
-h1 = StatsPlots.density(
-    correct_rrmar[1, :];
-    legend=false,
-    ylabel="Density",
-    linewidth=3,
-    yguidefont=16   # <-- increase y-axis label font size
-)
-StatsPlots.density!(under_rrmar[1, :]; linewidth=3)
-StatsPlots.density!(over_rrmar[1, :]; linewidth=3)
-vline!([delta_true[2]]; linewidth=3)
-
-h2 = StatsPlots.density(
-    correct_delta[1, :];
-    legend=false,
-    ylabel="Density",
-    linewidth=3,
-    yguidefont=16   # <-- increase y-axis label font size
-)
-StatsPlots.density!(under_delta[1, :]; linewidth=3)
-StatsPlots.density!(over_delta[1, :]; linewidth=3)
-vline!([delta_true[2]]; linewidth=3)
+# h1 = StatsPlots.density(
+#     correct_rrmar[1, :];
+#     legend=false,
+#     ylabel="Density",
+#     linewidth=3,
+#     yguidefont=16   # <-- increase y-axis label font size
+# )
+# StatsPlots.density!(under_rrmar[1, :]; linewidth=3)
+# StatsPlots.density!(over_rrmar[1, :]; linewidth=3)
+# vline!([delta_true[2]]; linewidth=3)
+#
+# h2 = StatsPlots.density(
+#     correct_delta[1, :];
+#     legend=false,
+#     ylabel="Density",
+#     linewidth=3,
+#     yguidefont=16   # <-- increase y-axis label font size
+# )
+# StatsPlots.density!(under_delta[1, :]; linewidth=3)
+# StatsPlots.density!(over_delta[1, :]; linewidth=3)
+# vline!([delta_true[2]]; linewidth=3)

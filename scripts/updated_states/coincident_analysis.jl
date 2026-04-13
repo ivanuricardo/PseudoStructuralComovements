@@ -38,9 +38,6 @@ n1, n2, obs = size(rearranged_tendata)
 dimvals = [n1, n2]
 matdata = vectorize(rearranged_tendata)
 
-
-tmp = rrmar(matdata, dimvals, [2,1])
-
 icest = rank_selection(matdata, dimvals; iters=1000, pmax=1, num_starts=50, num_selected=5)
 icest2 = rrmar_ic(matdata, dimvals)
 # aic selects (8,4) with one lag
