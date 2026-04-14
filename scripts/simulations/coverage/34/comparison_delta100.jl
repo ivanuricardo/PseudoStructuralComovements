@@ -20,13 +20,13 @@ u4_true = coef.u4
 correct_delta = fill(NaN, 2, sims)
 under_delta = fill(NaN, 2, sims)
 over_delta = fill(NaN, 2, sims)
-ps_ll = fill(NaN, 1, sims)
-comove_iters = fill(NaN, 1, sims)
+ps_ll = fill(NaN, sims)
+comove_iters = fill(NaN, sims)
 
 correct_rrmar = fill(NaN, 2, sims)
 under_rrmar = fill(NaN, 2, sims)
 over_rrmar = fill(NaN, 2, sims)
-rrmar_ll = fill(NaN, 1, sims)
+rrmar_ll = fill(NaN, sims)
 
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_rank, obs; A=coef, burnin, matrix_err=true)
@@ -65,20 +65,18 @@ save(datadir("coverage/34/delta_comparison_results100.jld2"), Dict(
     "comove_iters" => comove_iters,
 ))
 
-loaded_results = load(datadir("coverage/34/delta_comparison_results100.jld2"))
-correct_delta = loaded_results["correct_delta"]
-under_delta = loaded_results["under_delta"]
-over_delta = loaded_results["over_delta"]
-correct_rrmar = loaded_results["correct_rrmar"]
-under_rrmar = loaded_results["under_rrmar"]
-over_rrmar = loaded_results["over_rrmar"]
-delta_true = loaded_results["delta_true"]
-ps_ll = loaded_results["ps_ll"]
-rrmar_ll = loaded_results["rrmar_ll"]
-comove_iters = loaded_results["comove_iters"]
+# loaded_results = load(datadir("coverage/34/delta_comparison_results100.jld2"))
+# correct_delta = loaded_results["correct_delta"]
+# under_delta = loaded_results["under_delta"]
+# over_delta = loaded_results["over_delta"]
+# correct_rrmar = loaded_results["correct_rrmar"]
+# under_rrmar = loaded_results["under_rrmar"]
+# over_rrmar = loaded_results["over_rrmar"]
+# delta_true = loaded_results["delta_true"]
+# ps_ll = loaded_results["ps_ll"]
+# rrmar_ll = loaded_results["rrmar_ll"]
+# comove_iters = loaded_results["comove_iters"]
 
-Plots.plot(ps_ll')
-Plots.plot!(rrmar_ll')
 
 # h1 = StatsPlots.density(
 #     correct_rrmar[1, :];
