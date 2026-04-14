@@ -31,9 +31,9 @@ rrmar_ll = fill(NaN, 1, sims)
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_rank, obs; A=coef, burnin, matrix_err=true)
 
-    correct_reg = comovement_reg(data.data, dimvals, true_rank; iters=1000, num_starts=200, num_selected=10)
-    over_reg = comovement_reg(data.data, dimvals, over_rank; iters=1000, num_starts=200, num_selected=10)
-    under_reg = comovement_reg(data.data, dimvals, under_rank; iters=1000, num_starts=200, num_selected=10)
+    correct_reg = comovement_reg(data.data, dimvals, true_rank; iters=1000, num_starts=100, num_selected=10)
+    over_reg = comovement_reg(data.data, dimvals, over_rank; iters=1000, num_starts=100, num_selected=10)
+    under_reg = comovement_reg(data.data, dimvals, under_rank; iters=1000, num_starts=100, num_selected=10)
 
     rrmar_correct = rrmar(data.data, dimvals, true_rank)
     rrmar_over = rrmar(data.data, dimvals, over_rank)
@@ -64,6 +64,21 @@ save(datadir("coverage/34/delta_comparison_results100.jld2"), Dict(
     "rrmar_ll" => rrmar_ll,
     "comove_iters" => comove_iters,
 ))
+
+loaded_results = load(datadir("coverage/34/delta_comparison_results100.jld2"))
+correct_delta = loaded_results["correct_delta"]
+under_delta = loaded_results["under_delta"]
+over_delta = loaded_results["over_delta"]
+correct_rrmar = loaded_results["correct_rrmar"]
+under_rrmar = loaded_results["under_rrmar"]
+over_rrmar = loaded_results["over_rrmar"]
+delta_true = loaded_results["delta_true"]
+ps_ll = loaded_results["ps_ll"]
+rrmar_ll = loaded_results["rrmar_ll"]
+comove_iters = loaded_results["comove_iters"]
+
+Plots.plot(ps_ll')
+Plots.plot!(rrmar_ll')
 
 # h1 = StatsPlots.density(
 #     correct_rrmar[1, :];

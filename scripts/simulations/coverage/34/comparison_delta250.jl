@@ -31,9 +31,9 @@ rrmar_ll = fill(NaN, 1, sims)
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_rank, obs; A=coef, burnin, matrix_err=true)
 
-    correct_reg = comovement_reg(data.data, dimvals, true_rank; iters=1000)
-    over_reg = comovement_reg(data.data, dimvals, over_rank; iters=1000)
-    under_reg = comovement_reg(data.data, dimvals, under_rank; iters=1000)
+    correct_reg = comovement_reg(data.data, dimvals, true_rank; iters=1000, num_starts=100, num_selected=10)
+    over_reg = comovement_reg(data.data, dimvals, over_rank; iters=1000, num_starts=100, num_selected=10)
+    under_reg = comovement_reg(data.data, dimvals, under_rank; iters=1000, num_starts=100, num_selected=10)
 
     rrmar_correct = rrmar(data.data, dimvals, true_rank)
     rrmar_over = rrmar(data.data, dimvals, over_rank)
