@@ -65,29 +65,62 @@ save(datadir("coverage/34/delta_comparison_results100.jld2"), Dict(
     "comove_iters" => comove_iters,
 ))
 
-# loaded_results = load(datadir("coverage/34/delta_comparison_results100.jld2"))
-# correct_delta = loaded_results["correct_delta"]
-# under_delta = loaded_results["under_delta"]
-# over_delta = loaded_results["over_delta"]
-# correct_rrmar = loaded_results["correct_rrmar"]
-# under_rrmar = loaded_results["under_rrmar"]
-# over_rrmar = loaded_results["over_rrmar"]
-# delta_true = loaded_results["delta_true"]
-# ps_ll = loaded_results["ps_ll"]
-# rrmar_ll = loaded_results["rrmar_ll"]
-# comove_iters = loaded_results["comove_iters"]
+loaded_results = load(datadir("coverage/34/delta_comparison_results100.jld2"))
+correct_delta = loaded_results["correct_delta"]
+under_delta = loaded_results["under_delta"]
+over_delta = loaded_results["over_delta"]
+correct_rrmar = loaded_results["correct_rrmar"]
+under_rrmar = loaded_results["under_rrmar"]
+over_rrmar = loaded_results["over_rrmar"]
+delta_true = loaded_results["delta_true"]
+ps_ll = loaded_results["ps_ll"]
+rrmar_ll = loaded_results["rrmar_ll"]
+comove_iters = loaded_results["comove_iters"]
+Plots.plot(rrmar_ll)
+Plots.plot!(ps_ll)
 
 
-# h1 = StatsPlots.density(
-#     correct_rrmar[1, :];
-#     legend=false,
-#     ylabel="Density",
-#     linewidth=3,
-#     yguidefont=16   # <-- increase y-axis label font size
-# )
+lims = (min(minimum(ps_ll), minimum(rrmar_ll)),
+        max(maximum(ps_ll), maximum(rrmar_ll)))
+
+Plots.scatter(ps_ll, rrmar_ll;
+    xlabel = "Our method (neg. log-likelihood)",
+    ylabel = "Benchmark RRMAR (neg. log-likelihood)",
+    label  = "Simulations",
+    markersize = 3, alpha = 0.5,
+    xlims = lims, ylims = lims,
+    aspect_ratio = :equal,
+    legend = :bottomright)
+
+Plots.plot!(collect(lims), collect(lims);
+      label = "45° line", color = :black, linestyle = :dash, linewidth = 1)
+Plots.savefig("plots/density_plots/34/delta100_likelihood_comparison.pdf")
+
+diffs = rrmar_ll .- ps_ll  # positive → our method better
+Plots.histogram(diffs;
+    bins = 60,
+    xlabel = "Benchmark NLL − Our NLL",
+    ylabel = "Count (log scale)",
+    yscale = :log10,
+    label = nothing,
+    title = "Distribution of likelihood gaps")
+
+Plots.savefig("plots/density_plots/34/delta100_likelihood_gap.pdf")
+
+
+h1 = StatsPlots.density(
+    correct_delta[1, :];
+    legend=false,
+    ylabel="Density",
+    linewidth=3,
+    yguidefont=16   # <-- increase y-axis label font size
+)
+StatsPlots.density!(under_delta[1, :]; linewidth=3)
+StatsPlots.density!(over_delta[1, :]; linewidth=3)
+# StatsPlots.density!(correct_rrmar[1, :]; linewidth=3)
 # StatsPlots.density!(under_rrmar[1, :]; linewidth=3)
 # StatsPlots.density!(over_rrmar[1, :]; linewidth=3)
-# vline!([delta_true[2]]; linewidth=3)
+vline!([delta_true[2]]; linewidth=3)
 #
 # h2 = StatsPlots.density(
 #     correct_delta[1, :];
@@ -99,3 +132,21 @@ save(datadir("coverage/34/delta_comparison_results100.jld2"), Dict(
 # StatsPlots.density!(under_delta[1, :]; linewidth=3)
 # StatsPlots.density!(over_delta[1, :]; linewidth=3)
 # vline!([delta_true[2]]; linewidth=3)
+
+p1 = StatsPlots.density(correct_delta[1, :];
+    label="Ours", linewidth=3, title="Correct rank", ylabel="Density")
+StatsPlots.density!(correct_rrmar[1, :]; label="RRMAR", linewidth=3)
+vline!([delta_true[2]]; label="True", linewidth=2, color=:black)
+
+p2 = StatsPlots.density(under_delta[1, :];
+    label="Ours", linewidth=3, title="Under-specified")
+StatsPlots.density!(under_rrmar[1, :]; label="RRMAR", linewidth=3)
+vline!([delta_true[2]]; label="True", linewidth=2, color=:black)
+
+p3 = StatsPlots.density(over_delta[1, :];
+    label="Ours", linewidth=3, title="Over-specified")
+StatsPlots.density!(over_rrmar[1, :]; label="RRMAR", linewidth=3)
+vline!([delta_true[2]]; label="True", linewidth=2, color=:black)
+
+Plots.plot(p1, p2, p3; layout=(1,3), size=(1200, 350), link=:x)
+

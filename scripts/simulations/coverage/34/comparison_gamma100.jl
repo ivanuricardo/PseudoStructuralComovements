@@ -52,18 +52,18 @@ rrmar_ll = fill(NaN, sims)
 
 end
 
-save(datadir("coverage/34/gamma_comparison_results100.jld2"), Dict(
-    "correct_gamma" => correct_gamma,
-    "under_gamma" => under_gamma,
-    "over_gamma" => over_gamma,
-    "correct_rrmar" => correct_rrmar,
-    "under_rrmar" => under_rrmar,
-    "over_rrmar" => over_rrmar,
-    "gamma_true" => gamma_true,
-    "ps_ll" => ps_ll,
-    "rrmar_ll" => rrmar_ll,
-    "comove_iters" => comove_iters,
-))
+# save(datadir("coverage/34/gamma_comparison_results100.jld2"), Dict(
+#     "correct_gamma" => correct_gamma,
+#     "under_gamma" => under_gamma,
+#     "over_gamma" => over_gamma,
+#     "correct_rrmar" => correct_rrmar,
+#     "under_rrmar" => under_rrmar,
+#     "over_rrmar" => over_rrmar,
+#     "gamma_true" => gamma_true,
+#     "ps_ll" => ps_ll,
+#     "rrmar_ll" => rrmar_ll,
+#     "comove_iters" => comove_iters,
+# ))
 
 # loaded_results = load(datadir("coverage/34/gamma_comparison_results100.jld2"))
 # correct_gamma = loaded_results["correct_gamma"]
@@ -98,3 +98,35 @@ save(datadir("coverage/34/gamma_comparison_results100.jld2"), Dict(
 # StatsPlots.density!(under_gamma[1, :]; linewidth=3)
 # StatsPlots.density!(over_gamma[1, :]; linewidth=3)
 # vline!([gamma_true[2]]; linewidth=3)
+
+loaded_results = load(datadir("coverage/34/gamma_comparison_results100.jld2"))
+correct_gamma = loaded_results["correct_gamma"]
+under_gamma = loaded_results["under_gamma"]
+over_gamma = loaded_results["over_gamma"]
+correct_rrmar = loaded_results["correct_rrmar"]
+under_rrmar = loaded_results["under_rrmar"]
+over_rrmar = loaded_results["over_rrmar"]
+gamma_true = loaded_results["gamma_true"]
+ps_ll = loaded_results["ps_ll"]
+rrmar_ll = loaded_results["rrmar_ll"]
+comove_iters = loaded_results["comove_iters"]
+Plots.plot(rrmar_ll)
+Plots.plot!(ps_ll)
+
+
+lims = (min(minimum(ps_ll), minimum(rrmar_ll)),
+        max(maximum(ps_ll), maximum(rrmar_ll)))
+
+Plots.scatter(ps_ll, rrmar_ll;
+    xlabel = "Our method (neg. log-likelihood)",
+    ylabel = "Benchmark RRMAR (neg. log-likelihood)",
+    label  = "Simulations",
+    markersize = 3, alpha = 0.5,
+    xlims = lims, ylims = lims,
+    aspect_ratio = :equal,
+    legend = :bottomright)
+
+Plots.plot!(collect(lims), collect(lims);
+      label = "45° line", color = :black, linestyle = :dash, linewidth = 1)
+Plots.savefig("plots/density_plots/34/gamma100_likelihood_comparison.pdf")
+

@@ -20,13 +20,13 @@ u4_true = coef.u4
 correct_delta = fill(NaN, 2, sims)
 under_delta = fill(NaN, 2, sims)
 over_delta = fill(NaN, 2, sims)
-ps_ll = fill(NaN, 1, sims)
-comove_iters = fill(NaN, 1, sims)
+ps_ll = fill(NaN, sims)
+comove_iters = fill(NaN, sims)
 
 correct_rrmar = fill(NaN, 2, sims)
 under_rrmar = fill(NaN, 2, sims)
 over_rrmar = fill(NaN, 2, sims)
-rrmar_ll = fill(NaN, 1, sims)
+rrmar_ll = fill(NaN, sims)
 
 @showprogress Threads.@threads for i = 1:sims
     data = simulate_rrmar_data(dimvals, true_rank, obs; A=coef, burnin, matrix_err=true)
@@ -86,3 +86,35 @@ h2 = StatsPlots.density(
 StatsPlots.density!(under_delta[1, :]; linewidth=3)
 StatsPlots.density!(over_delta[1, :]; linewidth=3)
 vline!([delta_true[2]]; linewidth=3)
+
+loaded_results = load(datadir("coverage/34/delta_comparison_results250.jld2"))
+correct_delta = loaded_results["correct_delta"]
+under_delta = loaded_results["under_delta"]
+over_delta = loaded_results["over_delta"]
+correct_rrmar = loaded_results["correct_rrmar"]
+under_rrmar = loaded_results["under_rrmar"]
+over_rrmar = loaded_results["over_rrmar"]
+delta_true = loaded_results["delta_true"]
+ps_ll = loaded_results["ps_ll"]
+rrmar_ll = loaded_results["rrmar_ll"]
+comove_iters = loaded_results["comove_iters"]
+Plots.plot(rrmar_ll)
+Plots.plot!(ps_ll)
+
+count(x -> x > 2000, rrmar_ll)  # 257 simulations were bad
+
+lims = (min(minimum(ps_ll), minimum(rrmar_ll)),
+        max(maximum(ps_ll), maximum(rrmar_ll)))
+
+Plots.scatter(ps_ll, rrmar_ll;
+    xlabel = "Our method (neg. log-likelihood)",
+    ylabel = "Benchmark RRMAR (neg. log-likelihood)",
+    label  = "Simulations",
+    markersize = 3, alpha = 0.5,
+    xlims = lims, ylims = lims,
+    aspect_ratio = :equal,
+    legend = :bottomright)
+
+Plots.plot!(collect(lims), collect(lims);
+      label = "45° line", color = :black, linestyle = :dash, linewidth = 1)
+Plots.savefig("plots/density_plots/34/delta250_likelihood_comparison.pdf")
