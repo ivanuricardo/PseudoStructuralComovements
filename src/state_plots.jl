@@ -45,16 +45,20 @@ tick_labels = string.(year.(dates[tick_ix]), " M", ((month.(dates[tick_ix]) .- 1
 states = ["IA", "IL", "IN", "MI", "MN", "ND", "OH", "SD", "WI"]
 econ_indicators = ["EMP", "UNR", "HOURS", "WAGES"]
 
-fig = Figure(backgroundcolor=:transparent, size=(1200, 1200));
+fig = Figure(backgroundcolor=:transparent, size=(1200, 1600));
 for i in 1:N1, j in 1:N2
     if (i == N1)
         ax = Axis(fig[i, j];
             xticks = (tick_ix, tick_labels),
-            xticklabelrotation = π/6
+            xticklabelrotation = π/6,
+            titlesize=20,
+            xticklabelsize = 16,
         )
     else
         ax = Axis(fig[i, j];
             xticks = (tick_ix, repeat([""], length(tick_ix))),
+            titlesize=20,
+            xticklabelsize = 16,
             #=xticks = (tick_ix, tick_labels),=#
             #=xticklabelrotation = π/6=#
         )
